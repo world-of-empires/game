@@ -38,12 +38,14 @@
 
 ```
 Source/WorldOfEmpires/
-├── Core/           → GameMode, GameState, PlayerState
+├── Core/           → GameMode, GameState, PlayerState, Character
 ├── WorldOfEmpires.Build.cs  → Зависимости модуля
 └── WorldOfEmpires.cpp      → Регистрация модуля
 ```
 
 **Правило:** Новые классы — в `Core/` с префиксом `WoE_`.
+
+**Камера:** AWoE_Character использует top-down камеру (King's Bounty) с переключением на First Person. Boom управляется через `SetWorldRotation` (не controller rotation). Подробности: AI_CONTEXT.md § 2.4.
 
 Подробности: **ARCHITECTURE.md**
 
@@ -195,4 +197,4 @@ git add → commit
 
 ---
 
-*Версия руководства: 0.1.2*
+*Версия руководства: 0.2.0*

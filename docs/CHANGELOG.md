@@ -4,6 +4,43 @@
 
 ---
 
+## [0.2.0] — 19.02.2026
+
+**Камера King's Bounty** | Полная переработка системы камеры — top-down вид + переключение на First Person
+
+### Изменено
+
+- **Source/WorldOfEmpires/Core/WoE_Character.h** — переработан:
+  - `EWoE_CameraMode::Exploration` переименован в "Exploration (Top-Down)"
+  - Добавлено свойство `DesiredYaw` (float) — yaw камеры, управляемый мышью
+  - Добавлено свойство `ExplorationYawSensitivity` (float) — чувствительность мыши в Exploration
+  - `ExplorationPitch` получил meta-ограничение ClampMin/ClampMax (-89..0)
+- **Source/WorldOfEmpires/Core/WoE_Character.cpp** — переработан:
+  - **Камера King's Bounty:** top-down вид с pitch -55°, arm length 1200, zoom 400–800
+  - **Архитектура камеры:** CameraBoom использует `bAbsoluteRotation` (через `SetAbsolute`) и `bUsePawnControlRotation = false` в Exploration — ротация boom полностью независима от controller rotation и вращения персонажа
+  - **Tick:** `UpdateCamera` вызывается ДО `Super::Tick` — Spring Arm видит актуальную ротацию в том же кадре
+  - **UpdateCamera (Exploration):** управляет boom напрямую через `SetWorldRotation`, не использует controller rotation
+  - **OnLook (Exploration):** модифицирует только `DesiredYaw`, не трогает controller rotation
+  - **OnMove:** использует `DesiredYaw` для направления движения в Exploration (camera-relative WASD)
+  - **BeginPlay:** принудительно устанавливает настройки компонентов CameraBoom (защита от Blueprint-перезаписи старых значений)
+  - **ApplyCameraMode:** переключает `bUsePawnControlRotation`, `SetAbsolute`, `bDoCollisionTest`, `bEnableCameraLag` при смене режима
+  - **Плавные переходы:** при переключении Exploration↔FirstPerson yaw передаётся между DesiredYaw и controller rotation без рывков
+  - **Защита от спайков:** дельты > 200 px отбрасываются (защита при захвате мыши / фокусе окна)
+  - Добавлен диагностический `UE_LOG` в BeginPlay
+
+### Исправлено
+
+- Камера больше не переворачивается вверх дном при первом клике мыши
+- Устранено дрожание камеры (jitter) из-за конфликта между OnLook и UpdateCamera за controller rotation
+- Устранена зависимость boom от вращения персонажа при ходьбе
+
+### Совместимость
+
+- Исправлена ошибка компиляции UE 5.7: `bAbsoluteRotation` стал private — заменён на `SetAbsolute()`
+- Исправлена ошибка компиляции UE 5.7: `UE_LOG` с битовыми полями — `FormatStringSan` не позволяет `%d` для bitfield
+
+---
+
 ## [0.1.2] — 19.02.2025
 
 **Input Actions, Mapping Context, Blueprint [Только Unreal Engine]** | Настройка ввода и персонажа в редакторе
@@ -135,8 +172,12 @@
 
 Проект использует [Semantic Versioning](https://semver.org/).
 
-| Версия | Дата       | Фазы                    |
-|--------|------------|--------------------------|
-| 0.0.2  | 19.02.2025 | Документация и автоматизация |
-| 0.0.1  | 19.02.2025 | Документация             |
-| 0.0.0  | 19.02.2025 | 0, 1 (частично)          |
+| Версия | Дата       | Содержание                                      |
+|--------|------------|-------------------------------------------------|
+| 0.2.0  | 19.02.2026 | Камера King's Bounty, top-down + FP, UE 5.7 fix |
+| 0.1.2  | 19.02.2025 | Input Actions, Blueprint (UE)                   |
+| 0.1.1  | 19.02.2025 | docs в git, комментарии                         |
+| 0.1.0  | 19.02.2025 | AWoE_Character с камерой                        |
+| 0.0.2  | 19.02.2025 | Документация и автоматизация                    |
+| 0.0.1  | 19.02.2025 | Документация                                    |
+| 0.0.0  | 19.02.2025 | Инициализация проекта                           |

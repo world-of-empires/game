@@ -7,29 +7,23 @@
 
 
 AWoE_GameMode::AWoE_GameMode() {
+    GameStateClass = AWoE_GameState::StaticClass();  // GameStateClass — какой GameState создать для этой игры
+    PlayerStateClass = AWoE_PlayerState::StaticClass(); // PlayerStateClass — какой PlayerState создавать для каждого игрока.
 
-    // Tell the engine: "When creating the game, use OUR classes,
-    // not the default ones".
+    // Назначаем Blueprint-персонажа как класс по умолчанию.
+    // ConstructorHelpers::FClassFinder ищет Blueprint-класс по пути.
+    // Путь берётся из Content Browser (правая кнопка ? Copy Reference).
+    static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/WoE/Core/Characters/BP_WoECharacter"));
+    // /Game/ = папка Content/
+    // Дальше путь как в Content Browser, но без расширения файла.
 
-    // GameStateClass - which GameState to create for this game.
-    GameStateClass = AWoE_GameState::StaticClass();
-    // StaticClass() - function that returns "class description" (UClass*).
-    // UE uses it to create an object of the required type.
-
-    // PlayerStateClass - which PlayerState to create for each player.
-    PlayerStateClass = AWoE_PlayerState::StaticClass();
-
-    // DefaultPawnClass - not set yet, will be ThirdPerson by default.
-    // Later we'll set AWoE_Character.
+    if (PlayerPawnBPClass.Class != nullptr)
+    {
+        DefaultPawnClass = PlayerPawnBPClass.Class;
+    }
 }
 
 void AWoE_GameMode::BeginPlay() {
 	Super::BeginPlay();
-
-    // For now just log to verify everything works.
-    // UE_LOG - logging macro.
-    // LogTemp - log category (temporary).
-    // Log - severity level (Log / Warning / Error).
-    // TEXT("...") - macro for UE string literals (Unicode support).
     UE_LOG(LogTemp, Log, TEXT("WoEGameMode: BeginPlay called. Server started."))
 }
