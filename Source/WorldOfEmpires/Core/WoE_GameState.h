@@ -19,26 +19,26 @@ public:
 
 
     // ================================================================
-    // REPLICATED PROPERTIES (свойства, которые сервер рассылает клиентам)
+    // REPLICATED PROPERTIES (properties that server sends to clients)
     // ================================================================
 
-    // UPROPERTY() Ч макрос, который говорит UE: "отслеживай это свойство".
-    // Replicated Ч свойство автоматически отправл€етс€ с сервера клиентам.
-    // BlueprintReadOnly Ч можно читать из Blueprint (визуального скрипта),
-    //   но нельз€ мен€ть. ћен€ть будем только из C++ на сервере.
-    // Category = "WoE|World" Ч дл€ удобной группировки в редакторе.
+    // UPROPERTY() - macro that tells UE: "track this property".
+    // Replicated - property is automatically sent from server to clients.
+    // BlueprintReadOnly - can be read from Blueprint (visual script),
+    //   but cannot be changed. We change it only from C++ on server.
+    // Category = "WoE|World" - for convenient grouping in editor.
 
     UPROPERTY(Replicated, BlueprintReadOnly, Category = "WoE|World")
     float GameTimeOfDay = 8.0f;
-    // ¬рем€ суток в игре (0.0 = полночь, 12.0 = полдень, 24.0 = снова полночь).
-    // Replicated = сервер считает врем€, клиенты получают значение автоматически.
+    // Time of day in game (0.0 = midnight, 12.0 = noon, 24.0 = midnight again).
+    // Replicated = server calculates time, clients receive value automatically.
 
 
 protected:
 	virtual void BeginPlay() override;
 
-    // Ёта функци€ ќЅя«ј“≈Ћ№Ќј если есть хот€ бы одно свойство с Replicated.
-    // UE вызывает еЄ автоматически, чтобы узнать  ј »≈ свойства реплицировать.
+    // This function is REQUIRED if there is at least one property with Replicated.
+    // UE calls it automatically to find out WHICH properties to replicate.
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 };

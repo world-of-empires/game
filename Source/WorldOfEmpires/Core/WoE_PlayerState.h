@@ -19,14 +19,14 @@ public:
 
 
 	// ================================================================
-	// Данные игрока, которые видны всем
+	// Player data visible to everyone
 	// ================================================================
 	
-	// ID клана (0 = нет клана).
+	// Clan ID (0 = no clan).
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="WoE|Social")
 	int32 ClanId;
 
-	// Отображаемое имя в игре.
+	// Display name in game.
 	UPROPERTY(Replicated, BlueprintReadOnly, Category="WoE|Social")
 	FString DisplayName;
 

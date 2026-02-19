@@ -9,38 +9,38 @@
 
 AWoE_Character::AWoE_Character()
 {
-    // ---- Настройка Spring Arm (штанги камеры) ----
+    // ---- Spring Arm setup (camera boom) ----
 
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 
     CameraBoom->SetupAttachment(RootComponent);
-    CameraBoom->bUsePawnControlRotation = true; // bUsePawnControlRotation — если true, штанга вращается вместе
+    CameraBoom->bUsePawnControlRotation = true; // If true, boom rotates with controller
     CameraBoom->TargetArmLength = 400.0f;
 
-    // ---- Настройка камеры ----
+    // ---- Camera setup ----
 
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     FollowCamera->bUsePawnControlRotation = false;
 
-    // ---- Настройка вращения персонажа ----
+    // ---- Character rotation setup ----
     
-    GetCharacterMovement()->bOrientRotationToMovement = true; // bOrientRotationToMovement = true — персонаж поворачивается 
-    GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // FRotator(Pitch, Yaw, Roll):
+    GetCharacterMovement()->bOrientRotationToMovement = true; // Character rotates toward movement direction
+    GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // FRotator(Pitch, Yaw, Roll)
 
-    bUseControllerRotationPitch = false; // наклон вперёд/назад
-    bUseControllerRotationYaw = false; // поворот влево/вправо (540 = быстрый поворот)
-    bUseControllerRotationRoll = false; //  наклон вбок
+    bUseControllerRotationPitch = false; // Pitch forward/back
+    bUseControllerRotationYaw = false;   // Yaw left/right (540 = fast turn)
+    bUseControllerRotationRoll = false; // Roll sideways
 
-    // ---- Значения камеры по умолчанию ----
+    // ---- Default camera values ----
     CurrentCameraMode = EWoE_CameraMode::Exploration;
     CurrentArmLength = 400.0f;
-    MinArmLength = 150.0f;    // Близко (как Diablo, но ещё ближе)
-    MaxArmLength = 800.0f;    // Далеко
-    ExplorationPitch = -35.0f; // Угол сверху (отрицательный = смотрим вниз)
-    ZoomSpeed = 50.0f;         // Шаг зума за один "щелчок" колеса
-    CameraInterpSpeed = 5.0f;  // Плавность (больше = быстрее)
+    MinArmLength = 150.0f;    // Close (like Diablo, but closer)
+    MaxArmLength = 800.0f;    // Far
+    ExplorationPitch = -35.0f; // Angle from above (negative = looking down)
+    ZoomSpeed = 50.0f;         // Zoom step per one wheel "click"
+    CameraInterpSpeed = 5.0f;  // Smoothness (higher = faster)
 
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -54,18 +54,18 @@ void AWoE_Character::BeginPlay()
 {
     Super::BeginPlay();
 
-    // Регистрируем Input Mapping Context.
-    // Mapping Context говорит движку: "Клавиша W привязана к MoveAction" и т.д.
+    // Register Input Mapping Context.
+    // Mapping Context tells the engine: "Key W is bound to MoveAction" etc.
 
-    // Получаем PlayerController этого персонажа.
-    // Cast — "приведение типа": проверяем что контроллер — именно PlayerController.
+    // Get this character's PlayerController.
+    // Cast - "type conversion": verify that controller is indeed PlayerController.
     if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
-        // Получаем подсистему Enhanced Input для этого контроллера.
+        // Get Enhanced Input subsystem for this controller.
         if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
             ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
         {
-            // Добавляем наш Mapping Context с приоритетом 0 (по умолчанию).
+            // Add our Mapping Context with priority 0 (default).
             if (DefaultMappingContext)
             {
                 Subsystem->AddMappingContext(DefaultMappingContext, 0);
@@ -73,40 +73,40 @@ void AWoE_Character::BeginPlay()
         }
     }
 
-    // Применяем начальный режим камеры.
+    // Apply initial camera mode.
     ApplyCameraMode(CurrentCameraMode);
 }
 
 // ================================================================
-// TICK (каждый кадр)
+// TICK (every frame)
 // ================================================================
 void AWoE_Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-    UpdateCamera(DeltaTime); // Плавно обновляем камеру каждый кадр.
+    UpdateCamera(DeltaTime); // Smoothly update camera every frame.
 }
 
 // ================================================================
-// ПРИВЯЗКА ВВОДА
+// INPUT BINDING
 // ================================================================
 void AWoE_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-    // Приводим к Enhanced Input Component.
-    // CastChecked — как Cast, но если не удалось — крашит игру.
-    // Используем потому что Enhanced Input ДОЛЖЕН быть включён
+    // Cast to Enhanced Input Component.
+    // CastChecked - like Cast, but crashes the game if it fails.
+    // We use it because Enhanced Input MUST be enabled.
     if (UEnhancedInputComponent* EnhancedInput = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
-        // BindAction — связывает Input Action с нашей функцией.
-        // ETriggerEvent::Triggered — вызывается КАЖДЫЙ КАДР пока клавиша зажата.
+        // BindAction - binds Input Action to our function.
+        // ETriggerEvent::Triggered - called EVERY FRAME while key is held.
         
         if (MoveAction) {
             EnhancedInput->BindAction(
-                MoveAction,                          // Какое действие
-                ETriggerEvent::Triggered,            // Когда вызывать
-                this,                                // Кто обрабатывает
-                &AWoE_Character::OnMove              // Какую функцию вызвать
+                MoveAction,                          // Which action
+                ETriggerEvent::Triggered,            // When to call
+                this,                                // Who handles it
+                &AWoE_Character::OnMove              // Which function to call
             );
         }
 
@@ -119,7 +119,7 @@ void AWoE_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
         }
 
         if (ToggleCameraModeAction) {
-            // Started — вызывается ОДИН раз при нажатии (не при удержании).
+            // Started - called ONCE on press (not while held).
             EnhancedInput->BindAction(ToggleCameraModeAction, ETriggerEvent::Started, this, &AWoE_Character::OnToggleCameraMode);
         }
     }
@@ -128,80 +128,80 @@ void AWoE_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 
 // ================================================================
-// ОБРАБОТЧИКИ ВВОДА
+// INPUT HANDLERS
 // ================================================================
 void AWoE_Character::OnMove(const FInputActionValue& Value)
 {
-    // Получаем 2D вектор из ввода.
-    // Для WASD: X = вперёд/назад (W/S), Y = влево/вправо (A/D).
+    // Get 2D vector from input.
+    // For WASD: X = forward/back (W/S), Y = left/right (A/D).
     const FVector2D MovementVector = Value.Get<FVector2D>();
 
     if (Controller == nullptr) return;
     
-    const FRotator Rotation = Controller->GetControlRotation(); // Получаем куда смотрит камера (поворот контроллера).
-    const FRotator YawRotation(0, Rotation.Yaw, 0); // Берём только Yaw (поворот влево/вправо), игнорируем наклон.
+    const FRotator Rotation = Controller->GetControlRotation(); // Get where camera is looking (controller rotation).
+    const FRotator YawRotation(0, Rotation.Yaw, 0); // Take only Yaw (left/right turn), ignore pitch.
 
-    // Вычисляем направления "вперёд" и "вправо" относительно камеры.
-    // FRotationMatrix — матрица вращения (математика преобразований).
-    // GetUnitAxis(EAxis::X) — единичный вектор "вперёд" для данного поворота.
+    // Calculate "forward" and "right" directions relative to camera.
+    // FRotationMatrix - rotation matrix (transform math).
+    // GetUnitAxis(EAxis::X) - unit vector "forward" for this rotation.
     const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
     const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-    // AddMovementInput — стандартная функция ACharacter.
-    // Она передаёт направление в CharacterMovementComponent,
-    // который обрабатывает физику, скорость, гравитацию и т.д.
-    // Второй параметр — масштаб (1.0 = полная скорость).
+    // AddMovementInput - standard ACharacter function.
+    // It passes direction to CharacterMovementComponent,
+    // which handles physics, speed, gravity, etc.
+    // Second parameter - scale (1.0 = full speed).
     AddMovementInput(ForwardDirection, MovementVector.X);
     AddMovementInput(RightDirection, MovementVector.Y);
 }
 
 void AWoE_Character::OnLook(const FInputActionValue& Value)
 {
-    // Вращение камеры мышью.
+    // Camera rotation with mouse.
     const FVector2D LookAxisVector = Value.Get<FVector2D>();
 
     if (Controller == nullptr) return;
 
     if (CurrentCameraMode == EWoE_CameraMode::FirstPerson)
     {
-        // В режиме от первого лица: мышь вращает камеру свободно.
-        AddControllerYawInput(LookAxisVector.X);    // Влево/вправо
-        AddControllerPitchInput(LookAxisVector.Y);  // Вверх/вниз
+        // In first person mode: mouse rotates camera freely.
+        AddControllerYawInput(LookAxisVector.X);    // Left/right
+        AddControllerPitchInput(LookAxisVector.Y);   // Up/down
     }
     else // Exploration
     {
-        // В Exploration: мышь вращает камеру вокруг персонажа
-        // (только если зажата правая кнопка мыши — это можно настроить
-        // в Input Action, но для MVP вращаем всегда).
+        // In Exploration: mouse rotates camera around character
+        // (only when right mouse button held - can be configured
+        // in Input Action, but for MVP we always rotate).
         AddControllerYawInput(LookAxisVector.X);
-        // Pitch НЕ меняем в Exploration — угол фиксирован.
+        // Don't change Pitch in Exploration - angle is fixed.
     }
 }
 
 
 void AWoE_Character::OnZoom(const FInputActionValue& Value)
 {
-    // Колесо мыши — приближение/отдаление.
+    // Mouse wheel - zoom in/out.
     const float ZoomValue = Value.Get<float>();
 
-    // Изменяем целевую длину штанги.
+    // Change target arm length.
     CurrentArmLength -= ZoomValue * ZoomSpeed;
-    // Минус потому что "scroll up" = приближение (уменьшение длины).
+    // Minus because "scroll up" = zoom in (decrease length).
 
-    // FMath::Clamp — ограничивает значение в диапазоне [Min, Max].
+    // FMath::Clamp - limits value to [Min, Max] range.
     CurrentArmLength = FMath::Clamp(CurrentArmLength, MinArmLength, MaxArmLength);
 
-    // Если приблизили очень сильно — автоматически переходим в First Person.
+    // If zoomed in very close - could auto-switch to First Person.
     if (CurrentArmLength <= MinArmLength + 10.0f)
     {
-        // Можно раскомментировать для автоматического переключения:
-        // ApplyCameraMode(EWoECameraMode::FirstPerson);
+        // Can uncomment for automatic switch:
+        // ApplyCameraMode(EWoE_CameraMode::FirstPerson);
     }
 }
 
 void AWoE_Character::OnToggleCameraMode(const FInputActionValue& Value)
 {
-    // Переключение режима камеры (кнопка V).
+    // Toggle camera mode (V key).
     if (CurrentCameraMode == EWoE_CameraMode::Exploration)
     {
         ApplyCameraMode(EWoE_CameraMode::FirstPerson);
@@ -213,7 +213,7 @@ void AWoE_Character::OnToggleCameraMode(const FInputActionValue& Value)
 }
 
 // ================================================================
-// КАМЕРА — обновление каждый кадр
+// CAMERA - update every frame
 // ================================================================
 void AWoE_Character::UpdateCamera(float DeltaTime)
 {
@@ -221,22 +221,22 @@ void AWoE_Character::UpdateCamera(float DeltaTime)
 
     if (CurrentCameraMode == EWoE_CameraMode::Exploration)
     {
-        // Плавно интерполируем длину штанги к целевой.
-        // FInterpTo — плавный переход от текущего к целевому значению.
-        // InterpSpeed — чем больше, тем быстрее.
+        // Smoothly interpolate arm length to target.
+        // FInterpTo - smooth transition from current to target value.
+        // InterpSpeed - higher = faster.
         const float NewArmLength = FMath::FInterpTo(
-            CameraBoom->TargetArmLength,    // Текущее значение
-            CurrentArmLength,                // Целевое значение
-            DeltaTime,                       // Время кадра
-            CameraInterpSpeed                // Скорость
+            CameraBoom->TargetArmLength,    // Current value
+            CurrentArmLength,              // Target value
+            DeltaTime,                     // Frame time
+            CameraInterpSpeed              // Speed
         );
         CameraBoom->TargetArmLength = NewArmLength;
 
-        // Фиксируем угол наклона (pitch) для Exploration.
-        // Получаем текущий поворот контроллера.
+        // Fix pitch angle for Exploration.
+        // Get current controller rotation.
         FRotator ControlRot = Controller ? Controller->GetControlRotation() : FRotator::ZeroRotator;
 
-        // Плавно двигаем pitch к ExplorationPitch.
+        // Smoothly move pitch toward ExplorationPitch.
         const float NewPitch = FMath::FInterpTo(
             ControlRot.Pitch,
             ExplorationPitch,
@@ -252,7 +252,7 @@ void AWoE_Character::UpdateCamera(float DeltaTime)
     }
     else if (CurrentCameraMode == EWoE_CameraMode::FirstPerson)
     {
-        // В First Person штанга = 0 (камера внутри головы).
+        // In First Person arm = 0 (camera inside head).
         const float NewArmLength = FMath::FInterpTo(
             CameraBoom->TargetArmLength,
             0.0f,
@@ -264,7 +264,7 @@ void AWoE_Character::UpdateCamera(float DeltaTime)
 }
 
 // ================================================================
-// КАМЕРА — применение режима
+// CAMERA - apply mode
 // ================================================================
 void AWoE_Character::ApplyCameraMode(EWoE_CameraMode NewMode)
 {
@@ -273,27 +273,27 @@ void AWoE_Character::ApplyCameraMode(EWoE_CameraMode NewMode)
     switch (NewMode)
     {
     case EWoE_CameraMode::Exploration:
-        // Персонаж поворачивается к направлению движения.
+        // Character rotates toward movement direction.
         GetCharacterMovement()->bOrientRotationToMovement = true;
         bUseControllerRotationYaw = false;
 
-        // Восстанавливаем дистанцию (если были в First Person).
+        // Restore distance (if was in First Person).
         if (CurrentArmLength < MinArmLength + 50.0f)
         {
-            CurrentArmLength = 400.0f; // Дистанция по умолчанию
+            CurrentArmLength = 400.0f; // Default distance
         }
 
-        UE_LOG(LogTemp, Log, TEXT("Камера: Exploration mode"));
+        UE_LOG(LogTemp, Log, TEXT("Camera: Exploration mode"));
         break;
 
     case EWoE_CameraMode::FirstPerson:
-        // В First Person персонаж смотрит куда смотрит камера.
+        // In First Person character looks where camera looks.
         GetCharacterMovement()->bOrientRotationToMovement = false;
         bUseControllerRotationYaw = true;
 
         CurrentArmLength = 0.0f;
 
-        UE_LOG(LogTemp, Log, TEXT("Камера: First Person mode"));
+        UE_LOG(LogTemp, Log, TEXT("Camera: First Person mode"));
         break;
     }
 }

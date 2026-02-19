@@ -1,6 +1,6 @@
 // WorldOfEmpires.Build.cs
-// Этот файл написан на C# (да, именно C#, не C++).
-// Он нужен только для настройки сборки, игровой код пишется на C++.
+// This file is written in C# (yes, C#, not C++).
+// It's only needed for build configuration, game code is written in C++.
 
 using UnrealBuildTool;
 
@@ -8,31 +8,31 @@ public class WorldOfEmpires : ModuleRules
 {
     public WorldOfEmpires(ReadOnlyTargetRules Target) : base(Target)
     {
-        // PCHUsage — настройка предкомпилированных заголовков.
-        // UseExplicitOrSharedPCHs — самый надёжный вариант.
+        // PCHUsage - precompiled headers setting.
+        // UseExplicitOrSharedPCHs - most reliable option.
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        // Список модулей UE, от которых зависит наша игра.
-        // Каждый модуль — это "библиотека" внутри UE.
+        // List of UE modules our game depends on.
+        // Each module is a "library" inside UE.
         PublicDependencyModuleNames.AddRange(new string[]
         {
-            "Core",              // Базовые типы (строки, массивы, математика)
-            "CoreUObject",       // Система объектов UE (UObject, рефлексия)
-            "Engine",            // Движок (AActor, ACharacter, компоненты)
-            "InputCore",         // Базовая обработка ввода (клавиши, мышь)
-            "EnhancedInput",     // Новая система ввода UE5 (используем её)
-            "GameplayTags",      // Система тегов (удобно для типов предметов)
-            "UMG",               // Виджеты UI (меню, инвентарь)
-            "NetCore",           // Сетевая подсистема
+            "Core",              // Basic types (strings, arrays, math)
+            "CoreUObject",       // UE object system (UObject, reflection)
+            "Engine",            // Engine (AActor, ACharacter, components)
+            "InputCore",         // Basic input handling (keys, mouse)
+            "EnhancedInput",     // New UE5 input system (we use it)
+            "GameplayTags",      // Tag system (useful for item types)
+            "UMG",               // UI widgets (menu, inventory)
+            "NetCore",           // Network subsystem
         });
 
-        // Приватные зависимости — модули, которые нужны только
-        // в .cpp файлах (не видны другим модулям, если наш модуль
-        // будет кем-то подключен).
+        // Private dependencies - modules needed only
+        // in .cpp files (not visible to other modules if our module
+        // is used elsewhere).
         PrivateDependencyModuleNames.AddRange(new string[]
         {
-            "Slate",             // Низкоуровневый UI
-            "SlateCore",         // Ядро Slate
+            "Slate",             // Low-level UI
+            "SlateCore",         // Slate core
         });
     }
 }

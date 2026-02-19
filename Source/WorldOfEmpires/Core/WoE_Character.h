@@ -1,9 +1,9 @@
-// Это ГЛАВНЫЙ класс персонажа.
-// ACharacter в UE уже имеет:
-// — Capsule (столкновения)
-// — SkeletalMesh (3D модель)
-// — CharacterMovement (ходьба, бег, прыжки, гравитация)
-// Мы добавляем: камеру, ввод, характеристики.
+// This is the MAIN character class.
+// ACharacter in UE already has:
+// - Capsule (collision)
+// - SkeletalMesh (3D model)
+// - CharacterMovement (walk, run, jump, gravity)
+// We add: camera, input, characteristics.
 
 #pragma once
 
@@ -11,9 +11,9 @@
 #include "GameFramework/Character.h"
 #include "WoE_Character.generated.h"
 
-// Предварительное объявление (forward declaration).
-// Говорим компилятору: "такой класс существует, подробности в .cpp".
-// Это ускоряет компиляцию — не нужно подключать весь заголовок здесь.
+// Forward declaration.
+// Tells the compiler: "this class exists, details in .cpp".
+// Speeds up compilation - no need to include the full header here.
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
@@ -21,22 +21,22 @@ class UInputAction;
 struct FInputActionValue;
 
 // ================================================================
-// ENUM для режимов камеры
+// ENUM for camera modes
 // ================================================================
 
-// UENUM() — макрос, чтобы UE видел enum в редакторе и Blueprint.
-// BlueprintType — можно использовать в Blueprint.
+// UENUM() - macro so UE sees the enum in the editor and Blueprint.
+// BlueprintType - can be used in Blueprint.
 UENUM(BlueprintType)
 enum class EWoE_CameraMode : uint8
-	// uint8 — беззнаковое 8-битное целое (0–255).
-	// UE требует указать тип хранения для UENUM.
+	// uint8 - unsigned 8-bit integer (0-255).
+	// UE requires specifying storage type for UENUM.
 {
 	Exploration    UMETA(DisplayName = "Exploration"),
-	// Основной режим: камера сзади-сверху, как в Bounty Kid Kains.
+	// Main mode: camera behind-above, like in Bounty Kid Kains.
 
 	FirstPerson    UMETA(DisplayName = "First Person"),
-	// Вид из глаз персонажа.
-	// UMETA(DisplayName = "...") — как enum будет отображаться в редакторе.
+	// View from character's eyes.
+	// UMETA(DisplayName = "...") - how the enum appears in the editor.
 };
 
 UCLASS()
@@ -48,12 +48,12 @@ public:
 	// Sets default values for this character's properties
 	AWoE_Character();
 
-	// Tick вызывается КАЖДЫЙ КАДР (60 раз в секунду при 60 FPS).
-	// DeltaTime = время с прошлого кадра в секундах (например 0.016 для 60 FPS).
+	// Tick is called EVERY FRAME (60 times per second at 60 FPS).
+	// DeltaTime = time since last frame in seconds (e.g. 0.016 for 60 FPS).
 	virtual void Tick(float DeltaTime) override;
 
-	// SetupPlayerInputComponent — UE вызывает эту функцию чтобы
-	// связать ваши действия ввода (WASD, мышь) с функциями персонажа.
+	// SetupPlayerInputComponent - UE calls this to
+	// bind your input actions (WASD, mouse) to character functions.
 	virtual void SetupPlayerInputComponent(
 		class UInputComponent* PlayerInputComponent) override;
 
@@ -63,91 +63,91 @@ protected:
 	virtual void BeginPlay() override;
 
 	// ================================================================
-	// КОМПОНЕНТЫ (части, из которых состоит персонаж)
+	// COMPONENTS (parts that make up the character)
 	// ================================================================
 
-	// Spring Arm = "палка-невидимка", на конце которой висит камера.
-	// Она автоматически сокращается если между камерой и персонажем стена.
-	// VisibleAnywhere — видна в редакторе, но нельзя менять тип компонента.
+	// Spring Arm = "invisible pole" with camera at the end.
+	// It automatically shortens if there's a wall between camera and character.
+	// VisibleAnywhere - visible in editor, but component type cannot be changed.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Camera")
 	TObjectPtr<USpringArmComponent> CameraBoom;
-	// TObjectPtr<> — "умный указатель" UE5. Как обычный указатель (*),
-	// но с доп. проверками и совместимостью с системой UE.
+	// TObjectPtr<> - UE5 "smart pointer". Like regular pointer (*),
+	// but with additional checks and UE system compatibility.
 
-	// Сама камера (рендерит картинку на экран).
+	// The camera itself (renders the image to screen).
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Camera")
 	TObjectPtr<UCameraComponent> FollowCamera;
 
 	// ================================================================
-	// КАМЕРА — настройки
+	// CAMERA - settings
 	// ================================================================
 
-	// Текущий режим камеры.
+	// Current camera mode.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera")
 	EWoE_CameraMode CurrentCameraMode;
-	// EditAnywhere — можно менять в редакторе.
-	// BlueprintReadWrite — можно читать И менять из Blueprint.
+	// EditAnywhere - can be changed in editor.
+	// BlueprintReadWrite - can read AND write from Blueprint.
 
-	// Текущая дистанция камеры (расстояние от персонажа).
+	// Current camera distance (distance from character).
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera")
 	float CurrentArmLength;
 
-	// Минимальная дистанция (при максимальном приближении).
+	// Minimum distance (at maximum zoom in).
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera")
 	float MinArmLength;
 
-	// Максимальная дистанция (при максимальном отдалении).
+	// Maximum distance (at maximum zoom out).
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera")
 	float MaxArmLength;
 
-	// Угол наклона камеры сверху (pitch) для Exploration-режима.
-	// Отрицательное значение = смотрим вниз.
+	// Camera pitch angle (from above) for Exploration mode.
+	// Negative value = looking down.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera")
 	float ExplorationPitch;
 
-	// Скорость зума (насколько быстро приближается/отдаляется за один "щелчок").
+	// Zoom speed (how fast zoom in/out per one "scroll").
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera")
 	float ZoomSpeed;
 
-	// Скорость интерполяции (плавность перехода камеры).
+	// Interpolation speed (smoothness of camera transition).
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera")
 	float CameraInterpSpeed;
 
 	// ================================================================
-	// ВВОД — ссылки на Input Actions
+	// INPUT - references to Input Actions
 	// ================================================================
-	// Input Mapping Context и Input Actions создаются как ассеты
-	// в редакторе (Content Browser). Здесь мы храним ссылки на них.
+	// Input Mapping Context and Input Actions are created as assets
+	// in the editor (Content Browser). Here we store references to them.
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WoE|Input")
 	TObjectPtr<UInputMappingContext> DefaultMappingContext;
-	// EditDefaultsOnly — можно менять только в "шаблоне" (Blueprint / CDO),
-	// но не на конкретном экземпляре в мире.
-	// CDO = Class Default Object — "эталонный" объект класса.
+	// EditDefaultsOnly - can only be changed in "template" (Blueprint / CDO),
+	// not on a specific instance in the world.
+	// CDO = Class Default Object - "reference" object of the class.
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WoE|Input")
 	TObjectPtr<UInputAction> MoveAction;
-	// Действие "движение" — получает 2D вектор от WASD.
+	// "Move" action - receives 2D vector from WASD.
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WoE|Input")
 	TObjectPtr<UInputAction> LookAction;
-	// Действие "обзор" — получает 2D вектор от мыши.
+	// "Look" action - receives 2D vector from mouse.
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WoE|Input")
 	TObjectPtr<UInputAction> ZoomAction;
-	// Действие "зум" — получает 1D значение от колеса мыши.
+	// "Zoom" action - receives 1D value from mouse wheel.
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WoE|Input")
 	TObjectPtr<UInputAction> ToggleCameraModeAction;
-	// Действие "переключить камеру" — нажатие кнопки (V например).
+	// "Toggle camera" action - button press (e.g. V).
 
 	// ================================================================
-	// ФУНКЦИИ ввода (вызываются системой Enhanced Input)
+	// INPUT functions (called by Enhanced Input system)
 	// ================================================================
 
-	// Эти функции будут вызваны автоматически когда игрок нажимает
-	// соответствующие клавиши. FInputActionValue содержит данные
-	// (например, вектор направления для WASD).
+	// These functions are called automatically when the player presses
+	// the corresponding keys. FInputActionValue contains the data
+	// (e.g. direction vector for WASD).
 
 	void OnMove(const FInputActionValue& Value);
 	void OnLook(const FInputActionValue& Value);
@@ -155,13 +155,13 @@ protected:
 	void OnToggleCameraMode(const FInputActionValue& Value);
 
 	// ================================================================
-	// КАМЕРА — внутренние функции
+	// CAMERA - internal functions
 	// ================================================================
 
-	// Обновляет положение камеры каждый кадр (вызывается из Tick).
+	// Updates camera position every frame (called from Tick).
 	void UpdateCamera(float DeltaTime);
 
-	// Применяет настройки для конкретного режима камеры.
+	// Applies settings for a specific camera mode.
 	void ApplyCameraMode(EWoE_CameraMode);
 
 };

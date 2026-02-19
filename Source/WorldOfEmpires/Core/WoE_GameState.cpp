@@ -3,25 +3,25 @@
 
 #include "WoE_GameState.h"
 
-// Ётот include ќЅя«ј“≈Ћ≈Ќ дл€ макроса DOREPLIFETIME,
-// который регистрирует свойства дл€ репликации.
+// This include is REQUIRED for DOREPLIFETIME macro,
+// which registers properties for replication.
 #include "Net/UnrealNetwork.h"
 
 AWoE_GameState::AWoE_GameState() {
-	// Ќачальное врем€ - 8:00 утра.
+	// Initial time - 8:00 AM.
 	GameTimeOfDay = 8.0f;
 }
 
 void AWoE_GameState::BeginPlay() {
 	Super::BeginPlay();
-	UE_LOG(LogTemp, Log, TEXT("WoEGameState: BeginPlay. ¬рем€ суток: %.1f"), GameTimeOfDay);
+	UE_LOG(LogTemp, Log, TEXT("WoEGameState: BeginPlay. Time of day: %.1f"), GameTimeOfDay);
 }
 
 void AWoE_GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	// –егистрируем наше свойство дл€ репликации.
-	// DOREPLIFETIME(ClassName, PropertyName) Ч макрос, который говорит:
-	// "ќтправл€й GameTimeOfDay ¬—≈ћ клиентам при каждом изменении".
+	// Register our property for replication.
+	// DOREPLIFETIME(ClassName, PropertyName) - macro that says:
+	// "Send GameTimeOfDay to ALL clients on every change".
 	DOREPLIFETIME(AWoE_GameState, GameTimeOfDay);
 }

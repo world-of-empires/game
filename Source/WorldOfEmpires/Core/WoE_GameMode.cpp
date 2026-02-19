@@ -8,29 +8,28 @@
 
 AWoE_GameMode::AWoE_GameMode() {
 
-    // √оворим движку : " огда создаЄшь игру, используй ЌјЎ» классы,
-    // а не стандартные".
+    // Tell the engine: "When creating the game, use OUR classes,
+    // not the default ones".
 
-    // GameStateClass Ч какой GameState создать дл€ этой игры.
+    // GameStateClass - which GameState to create for this game.
     GameStateClass = AWoE_GameState::StaticClass();
-    // StaticClass() Ч функци€, котора€ возвращает "описание класса" (UClass*).
-    // UE использует его чтобы создать объект нужного типа.
+    // StaticClass() - function that returns "class description" (UClass*).
+    // UE uses it to create an object of the required type.
 
-    // PlayerStateClass Ч какой PlayerState создавать дл€ каждого игрока.
+    // PlayerStateClass - which PlayerState to create for each player.
     PlayerStateClass = AWoE_PlayerState::StaticClass();
 
-    // DefaultPawnClass пока не трогаем Ч будет ThirdPerson по умолчанию.
-    // ѕозже поставим AWoECharacter.
-
+    // DefaultPawnClass - not set yet, will be ThirdPerson by default.
+    // Later we'll set AWoE_Character.
 }
 
 void AWoE_GameMode::BeginPlay() {
 	Super::BeginPlay();
 
-    // ѕока просто пишем в лог, чтобы убедитьс€ что всЄ работает.
-    // UE_LOG Ч макрос логировани€.
-    // LogTemp Ч категори€ лога (временна€).
-    // Log Ч уровень серьЄзности (Log / Warning / Error).
-    // TEXT("...") Ч макрос дл€ строковых литералов UE (поддержка Unicode).
-    UE_LOG(LogTemp, Log, TEXT("WoEGameMode: BeginPlay вызван. —ервер запущен."))
+    // For now just log to verify everything works.
+    // UE_LOG - logging macro.
+    // LogTemp - log category (temporary).
+    // Log - severity level (Log / Warning / Error).
+    // TEXT("...") - macro for UE string literals (Unicode support).
+    UE_LOG(LogTemp, Log, TEXT("WoEGameMode: BeginPlay called. Server started."))
 }
