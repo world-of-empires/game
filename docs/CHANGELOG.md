@@ -4,6 +4,24 @@
 
 ---
 
+## [0.1.2] — 19.02.2025
+
+**Input Actions, Mapping Context, Blueprint [Только Unreal Engine]** | Настройка ввода и персонажа в редакторе
+
+### Unreal Engine
+
+- **Content/WoE/Input/IMC_Default.uasset** (UE) — Input Mapping Context: привязки WASD (Move), Mouse XY (Look), Mouse Wheel (Zoom), V (Toggle Camera). Swizzle YXZ для W/S
+- **Content/WoE/Input/IA_Move.uasset** (UE) — Input Action для движения (2D вектор)
+- **Content/WoE/Input/IA_Look.uasset** (UE) — Input Action для обзора (мышь)
+- **Content/WoE/Input/IA_Zoom.uasset** (UE) — Input Action для зума (колёсико)
+- **Content/WoE/Input/IA_ToggleCameraMode.uasset** (UE) — Input Action для переключения камеры (V)
+- **Content/WoE/Core/Characters/BP_WoE_Character.uasset** (UE) — Blueprint-наследник WoE_Character: привязка IMC_Default, Move/Look/Zoom/ToggleCameraMode Actions, Mesh (манекен)
+- **Config/DefaultInput.ini** (UE) — настройки Enhanced Input, legacy mappings
+- **Config/DefaultEditor.ini** (UE) — настройки редактора
+- **Config/DefaultEngine.ini** (UE) — настройки движка
+
+---
+
 ## [0.1.1] — 19.02.2025
 
 **Конфигурация и комментарии** | Добавление docs в git, восстановление русских комментариев

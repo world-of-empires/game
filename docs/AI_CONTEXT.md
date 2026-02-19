@@ -65,12 +65,51 @@
 
 ---
 
+### 2.4. AWoE_Character
+
+**Файлы:** `Source/WorldOfEmpires/Core/WoE_Character.h`, `WoE_Character.cpp`
+
+| Свойство | Тип | Описание |
+|----------|-----|----------|
+| `CameraBoom` | USpringArmComponent | Spring Arm для камеры |
+| `FollowCamera` | UCameraComponent | Камера |
+| `CurrentCameraMode` | EWoE_CameraMode | Exploration / FirstPerson |
+| `CurrentArmLength`, `MinArmLength`, `MaxArmLength` | float | Дистанция зума |
+| `DefaultMappingContext` | UInputMappingContext | IMC_Default |
+| `MoveAction`, `LookAction`, `ZoomAction`, `ToggleCameraModeAction` | UInputAction | Input Actions |
+
+**Методы:** `OnMove`, `OnLook`, `OnZoom`, `OnToggleCameraMode`, `UpdateCamera`, `ApplyCameraMode`
+
+**Использование:** Blueprint **BP_WoE_Character** наследует AWoE_Character и задаёт IMC_Default + Actions. В World Settings → Default Pawn Class = BP_WoE_Character.
+
+---
+
+### 2.5. Unreal Engine — ассеты (Content)
+
+**Input (Content/WoE/Input/):**
+
+| Ассет | Тип | Описание |
+|-------|-----|----------|
+| `IMC_Default` | Input Mapping Context | WASD (Move), Mouse XY (Look), Mouse Wheel (Zoom), V (Toggle Camera). Swizzle YXZ для W/S |
+| `IA_Move` | Input Action | 2D вектор движения |
+| `IA_Look` | Input Action | 2D вектор обзора (мышь) |
+| `IA_Zoom` | Input Action | Зум (колёсико) |
+| `IA_ToggleCameraMode` | Input Action | Переключение камеры (V) |
+
+**Blueprint (Content/WoE/Core/Characters/):**
+
+| Ассет | Родитель | Описание |
+|-------|----------|----------|
+| `BP_WoE_Character` | AWoE_Character | Привязка IMC_Default, Move/Look/Zoom/ToggleCameraMode Actions, Mesh (манекен) |
+
+---
+
 ## 3. Зависимости (WorldOfEmpires.Build.cs)
 
 | Модуль | Назначение |
 |--------|------------|
 | Core, CoreUObject, Engine | Базовые типы UE |
-| InputCore, EnhancedInput | Ввод (пока не используется) |
+| InputCore, EnhancedInput | Ввод (AWoE_Character, IMC_Default, IA_*) |
 | GameplayTags | Теги (пока не используется) |
 | UMG | UI виджеты (пока не используется) |
 | NetCore | Сетевая репликация |
@@ -88,12 +127,13 @@
 
 ## 5. Типичный сценарий генерации
 
-### Добавить персонажа (AWoECharacter)
+### Добавить персонажа (AWoE_Character)
 
 1. Создать `WoE_Character.h/cpp` в `Core/`
 2. Наследовать от `ACharacter`
-3. В `AWoE_GameMode` установить `DefaultPawnClass = AWoE_Character::StaticClass()`
-4. Добавить в AI_CONTEXT.md
+3. Создать Blueprint BP_WoE_Character, привязать IMC_Default и Input Actions
+4. В World Settings → Default Pawn Class = BP_WoE_Character (или в GameMode)
+5. Добавить в AI_CONTEXT.md
 
 ### Добавить реплицируемое свойство
 
@@ -126,6 +166,6 @@
 
 ---
 
-*Документ актуален для версии 0.1.1. Обновляй при добавлении нового API.*
+*Документ актуален для версии 0.1.2. Обновляй при добавлении нового API.*
 
 **Как обновлять:** см. DEVELOPER_GUIDE.md (раздел «Как правильно зафиксировать изменения»)

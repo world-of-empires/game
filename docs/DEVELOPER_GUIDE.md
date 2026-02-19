@@ -191,7 +191,8 @@ git add → commit
 | История изменений? | CHANGELOG.md |
 | План развития? | ROADMAP.md |
 | Автофинализация через ИИ? | PROMPT_FINALIZE.md |
+| Изменения в Unreal (Config, Content)? | При финализации ИИ автоматически добавит в CHANGELOG с пометкой (UE). См. PROMPT_FINALIZE |
 
 ---
 
-*Версия руководства: 0.1.1*
+*Версия руководства: 0.1.2*
