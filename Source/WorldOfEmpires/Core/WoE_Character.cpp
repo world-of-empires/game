@@ -1,51 +1,69 @@
+// WoE_Character.cpp
+// Path: Source/WorldOfEmpires/Core/WoE_Character.cpp
 
 #include "WoE_Character.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 
+// ================================================================
+// CONSTRUCTOR
+// ================================================================
 AWoE_Character::AWoE_Character()
 {
-    PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = true;
 
-    // ---- Spring Arm (camera boom) ----
-    CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-    CameraBoom->SetupAttachment(RootComponent);
-    CameraBoom->bUsePawnControlRotation = false;
-    CameraBoom->SetAbsolute(false, true, false);
-    CameraBoom->TargetArmLength = 1200.0f;
-    CameraBoom->bDoCollisionTest = false;
-    CameraBoom->bEnableCameraLag = true;
-    CameraBoom->CameraLagSpeed = 8.0f;
+	// ---- Spring Arm ----
+	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	CameraBoom->SetupAttachment(RootComponent);
 
-    // ---- Camera ----
-    FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-    FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-    FollowCamera->bUsePawnControlRotation = false;
+	// Raise boom attachment point to eye level. Same for both modes; in Exploration
+	// (camera far) 70 units up is barely noticeable; in FirstPerson it defines view height.
+	CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, 70.f));
 
-    // ---- Character rotation ----
-    GetCharacterMovement()->bOrientRotationToMovement = true;
-    GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
+	CameraBoom->bUsePawnControlRotation = false;
+	CameraBoom->SetAbsolute(false, true, false);
+	CameraBoom->TargetArmLength = 1200.0f;
 
-    bUseControllerRotationPitch = false;
-    bUseControllerRotationYaw = false;
-    bUseControllerRotationRoll = false;
+	// Enable collision test. Boom shortens automatically if obstacle between camera and character.
+	CameraBoom->bDoCollisionTest = true;
 
-    // ---- Default camera values (King's Bounty top-down style) ----
-    CurrentCameraMode = EWoE_CameraMode::Exploration;
-    CurrentArmLength = 1200.0f;
-    MinArmLength = 300.0f;
-    MaxArmLength = 2500.0f;
-    ExplorationPitch = -55.0f;
-    DesiredYaw = 0.0f;
-    DesiredPitch = -55.0f;
-    ExplorationYawSensitivity = 1.0f;
-    FirstPersonCameraHeight = 70.0f;
-    ZoomSpeed = 80.0f;
-    CameraInterpSpeed = 8.0f;
+	CameraBoom->bEnableCameraLag = true;
+	CameraBoom->CameraLagSpeed = 8.0f;
+
+	// ---- Camera ----
+	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	FollowCamera->bUsePawnControlRotation = false;
+
+	// ---- Character rotation ----
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
+
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationYaw = false;
+	bUseControllerRotationRoll = false;
+
+	// ---- Default values - Exploration ----
+	CurrentCameraMode = EWoE_CameraMode::Exploration;
+	CurrentArmLength = 1200.0f;
+	MinArmLength = 300.0f;
+	MaxArmLength = 2500.0f;
+	ExplorationPitch = -55.0f;
+	DesiredYaw = 0.0f;
+	DesiredPitch = -55.0f;
+	ExplorationYawSensitivity = 1.0f;
+	ZoomSpeed = 80.0f;
+	CameraInterpSpeed = 8.0f;
+
+	// ---- Default values - First Person ----
+	FirstPersonCameraHeight = 70.0f;
+	bHideMeshInFirstPerson = true;
+	FirstPersonLookSensitivity = 1.0f;
 }
 
 // ================================================================
@@ -53,46 +71,51 @@ AWoE_Character::AWoE_Character()
 // ================================================================
 void AWoE_Character::BeginPlay()
 {
-    Super::BeginPlay();
+	Super::BeginPlay();
 
-    // Force component settings at runtime.
-    // Blueprint can save old property values that override the C++ constructor.
-    // Setting them here guarantees correct values regardless of Blueprint state.
-    if (CameraBoom)
-    {
-        CameraBoom->bUsePawnControlRotation = false;
-        CameraBoom->SetAbsolute(false, true, false);
-        CameraBoom->bDoCollisionTest = false;
-        CameraBoom->bEnableCameraLag = true;
-        CameraBoom->CameraLagSpeed = 8.0f;
-        CameraBoom->TargetArmLength = CurrentArmLength;
-    }
+	// Force component settings at runtime. Blueprint may have saved old values;
+	// this guarantees correct initial state.
+	if (CameraBoom)
+	{
+		CameraBoom->bUsePawnControlRotation = false;
+		CameraBoom->SetAbsolute(false, true, false);
+		CameraBoom->bDoCollisionTest = true;
+		CameraBoom->bEnableCameraLag = true;
+		CameraBoom->CameraLagSpeed = 8.0f;
+		CameraBoom->TargetArmLength = CurrentArmLength;
+		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, FirstPersonCameraHeight));
+	}
 
-    DesiredYaw = GetActorRotation().Yaw;
-    DesiredPitch = ExplorationPitch;
+	DesiredYaw = GetActorRotation().Yaw;
+	DesiredPitch = ExplorationPitch;
 
-    if (CameraBoom)
-    {
-        CameraBoom->SetWorldRotation(FRotator(DesiredPitch, DesiredYaw, 0.0f));
-    }
+	if (CameraBoom)
+	{
+		CameraBoom->SetWorldRotation(FRotator(DesiredPitch, DesiredYaw, 0.0f));
+	}
 
-    if (APlayerController* PC = Cast<APlayerController>(Controller))
-    {
-        if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
-            ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
-        {
-            if (DefaultMappingContext)
-            {
-                Subsystem->AddMappingContext(DefaultMappingContext, 0);
-            }
-        }
-    }
+	// Hide cursor and capture mouse. Standard for 3D action; when opening inventory
+	// switch to FInputModeGameAndUI and show cursor.
+	if (APlayerController* PC = Cast<APlayerController>(Controller))
+	{
+		PC->bShowMouseCursor = false;
+		PC->SetInputMode(FInputModeGameOnly());
 
-    ApplyCameraMode(CurrentCameraMode);
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+			ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+		{
+			if (DefaultMappingContext)
+			{
+				Subsystem->AddMappingContext(DefaultMappingContext, 0);
+			}
+		}
+	}
 
-    UE_LOG(LogTemp, Warning, TEXT("WoE Camera: Pitch=%.1f Yaw=%.1f Arm=%.1f PawnCtrlRot=%s"),
-        ExplorationPitch, DesiredYaw, CurrentArmLength,
-        CameraBoom && CameraBoom->bUsePawnControlRotation ? TEXT("true") : TEXT("false"));
+	ApplyCameraMode(CurrentCameraMode);
+
+	UE_LOG(LogTemp, Warning, TEXT("WoE Camera: Pitch=%.1f Yaw=%.1f Arm=%.1f PawnCtrlRot=%s"),
+		ExplorationPitch, DesiredYaw, CurrentArmLength,
+		CameraBoom && CameraBoom->bUsePawnControlRotation ? TEXT("true") : TEXT("false"));
 }
 
 // ================================================================
@@ -100,11 +123,8 @@ void AWoE_Character::BeginPlay()
 // ================================================================
 void AWoE_Character::Tick(float DeltaTime)
 {
-    // Update camera BEFORE Super::Tick so the spring arm component
-    // sees our rotation when it ticks (inside Super::Tick).
-    UpdateCamera(DeltaTime);
-
-    Super::Tick(DeltaTime);
+	UpdateCamera(DeltaTime);
+	Super::Tick(DeltaTime);
 }
 
 // ================================================================
@@ -112,185 +132,234 @@ void AWoE_Character::Tick(float DeltaTime)
 // ================================================================
 void AWoE_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-    Super::SetupPlayerInputComponent(PlayerInputComponent);
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-    if (UEnhancedInputComponent* EnhancedInput =
-        CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
-    {
-        if (MoveAction)
-        {
-            EnhancedInput->BindAction(
-                MoveAction, ETriggerEvent::Triggered, this, &AWoE_Character::OnMove);
-        }
-        if (LookAction)
-        {
-            EnhancedInput->BindAction(
-                LookAction, ETriggerEvent::Triggered, this, &AWoE_Character::OnLook);
-        }
-        if (ZoomAction)
-        {
-            EnhancedInput->BindAction(
-                ZoomAction, ETriggerEvent::Triggered, this, &AWoE_Character::OnZoom);
-        }
-        if (ToggleCameraModeAction)
-        {
-            EnhancedInput->BindAction(
-                ToggleCameraModeAction, ETriggerEvent::Started,
-                this, &AWoE_Character::OnToggleCameraMode);
-        }
-    }
+	if (UEnhancedInputComponent* EnhancedInput =
+		CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		if (MoveAction)
+		{
+			EnhancedInput->BindAction(
+				MoveAction, ETriggerEvent::Triggered, this, &AWoE_Character::OnMove);
+		}
+		if (LookAction)
+		{
+			EnhancedInput->BindAction(
+				LookAction, ETriggerEvent::Triggered, this, &AWoE_Character::OnLook);
+		}
+		if (ZoomAction)
+		{
+			EnhancedInput->BindAction(
+				ZoomAction, ETriggerEvent::Triggered, this, &AWoE_Character::OnZoom);
+		}
+		if (ToggleCameraModeAction)
+		{
+			EnhancedInput->BindAction(
+				ToggleCameraModeAction, ETriggerEvent::Started,
+				this, &AWoE_Character::OnToggleCameraMode);
+		}
+	}
 }
 
 // ================================================================
-// INPUT HANDLERS
+// INPUT: MOVEMENT (WASD)
 // ================================================================
-
 void AWoE_Character::OnMove(const FInputActionValue& Value)
 {
-    const FVector2D MovementVector = Value.Get<FVector2D>();
-    if (Controller == nullptr) return;
+	const FVector2D MovementVector = Value.Get<FVector2D>();
+	if (Controller == nullptr) return;
 
-    const float DirectionYaw =
-        (CurrentCameraMode == EWoE_CameraMode::Exploration)
-        ? DesiredYaw
-        : Controller->GetControlRotation().Yaw;
+	// Forward direction depends on camera mode. Exploration: forward = camera direction (DesiredYaw).
+	// FirstPerson: forward = player look direction (Controller Rotation).
+	const float DirectionYaw =
+		(CurrentCameraMode == EWoE_CameraMode::Exploration)
+		? DesiredYaw
+		: Controller->GetControlRotation().Yaw;
 
-    const FRotator YawRotation(0.0f, DirectionYaw, 0.0f);
-    const FVector ForwardDir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-    const FVector RightDir   = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	const FRotator YawRotation(0.0f, DirectionYaw, 0.0f);
+	const FVector ForwardDir = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	const FVector RightDir   = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-    AddMovementInput(ForwardDir, MovementVector.Y);
-    AddMovementInput(RightDir, MovementVector.X);
-}
-
-void AWoE_Character::OnLook(const FInputActionValue& Value)
-{
-    FVector2D LookAxisVector = Value.Get<FVector2D>();
-    if (Controller == nullptr) return;
-
-    // Discard abnormally large deltas (mouse capture / window focus spike).
-    if (FMath::Abs(LookAxisVector.X) > 200.0f || FMath::Abs(LookAxisVector.Y) > 200.0f)
-    {
-        return;
-    }
-
-    if (CurrentCameraMode == EWoE_CameraMode::FirstPerson)
-    {
-        AddControllerYawInput(LookAxisVector.X);
-        AddControllerPitchInput(LookAxisVector.Y);
-    }
-    else
-    {
-        DesiredYaw += LookAxisVector.X * ExplorationYawSensitivity;
-        DesiredPitch += LookAxisVector.Y * ExplorationYawSensitivity;
-        DesiredPitch = FMath::Clamp(DesiredPitch, -89.0f, -5.0f);
-    }
-}
-
-void AWoE_Character::OnZoom(const FInputActionValue& Value)
-{
-    if (CurrentCameraMode != EWoE_CameraMode::Exploration) return;
-
-    const float ZoomValue = Value.Get<float>();
-    CurrentArmLength -= ZoomValue * ZoomSpeed;
-    CurrentArmLength = FMath::Clamp(CurrentArmLength, MinArmLength, MaxArmLength);
-}
-
-void AWoE_Character::OnToggleCameraMode(const FInputActionValue& Value)
-{
-    if (CurrentCameraMode == EWoE_CameraMode::Exploration)
-    {
-        ApplyCameraMode(EWoE_CameraMode::FirstPerson);
-    }
-    else
-    {
-        ApplyCameraMode(EWoE_CameraMode::Exploration);
-    }
+	AddMovementInput(ForwardDir, MovementVector.Y);
+	AddMovementInput(RightDir, MovementVector.X);
 }
 
 // ================================================================
-// CAMERA ? per-frame update
+// INPUT: LOOK (MOUSE)
+// ================================================================
+void AWoE_Character::OnLook(const FInputActionValue& Value)
+{
+	FVector2D LookAxisVector = Value.Get<FVector2D>();
+	if (Controller == nullptr) return;
+
+	// Discard abnormally large deltas (mouse capture / window focus spike).
+	if (FMath::Abs(LookAxisVector.X) > 200.0f || FMath::Abs(LookAxisVector.Y) > 200.0f)
+	{
+		return;
+	}
+
+	if (CurrentCameraMode == EWoE_CameraMode::FirstPerson)
+	{
+		// Use FirstPersonLookSensitivity. AddControllerYawInput/PitchInput add to Controller Rotation.
+		// Pitch is clamped by PlayerCameraManager (+/-89.9) - camera won't flip.
+		AddControllerYawInput(LookAxisVector.X * FirstPersonLookSensitivity);
+		AddControllerPitchInput(LookAxisVector.Y * FirstPersonLookSensitivity);
+	}
+	else
+	{
+		// Exploration: mouse rotates camera AROUND character.
+		DesiredYaw += LookAxisVector.X * ExplorationYawSensitivity;
+		DesiredPitch += LookAxisVector.Y * ExplorationYawSensitivity;
+		DesiredPitch = FMath::Clamp(DesiredPitch, -89.0f, -5.0f);
+	}
+}
+
+// ================================================================
+// INPUT: ZOOM (MOUSE WHEEL)
+// ================================================================
+void AWoE_Character::OnZoom(const FInputActionValue& Value)
+{
+	if (CurrentCameraMode != EWoE_CameraMode::Exploration) return;
+
+	const float ZoomValue = Value.Get<float>();
+	CurrentArmLength -= ZoomValue * ZoomSpeed;
+	CurrentArmLength = FMath::Clamp(CurrentArmLength, MinArmLength, MaxArmLength);
+}
+
+// ================================================================
+// INPUT: TOGGLE CAMERA (V)
+// ================================================================
+void AWoE_Character::OnToggleCameraMode(const FInputActionValue& Value)
+{
+	if (CurrentCameraMode == EWoE_CameraMode::Exploration)
+	{
+		ApplyCameraMode(EWoE_CameraMode::FirstPerson);
+	}
+	else
+	{
+		ApplyCameraMode(EWoE_CameraMode::Exploration);
+	}
+}
+
+// ================================================================
+// CAMERA - per-frame update
 // ================================================================
 void AWoE_Character::UpdateCamera(float DeltaTime)
 {
-    if (!CameraBoom) return;
+	if (!CameraBoom) return;
 
-    if (CurrentCameraMode == EWoE_CameraMode::Exploration)
-    {
-        // Smooth zoom.
-        CameraBoom->TargetArmLength = FMath::FInterpTo(
-            CameraBoom->TargetArmLength, CurrentArmLength, DeltaTime, CameraInterpSpeed);
+	if (CurrentCameraMode == EWoE_CameraMode::Exploration)
+	{
+		// Smooth zoom.
+		CameraBoom->TargetArmLength = FMath::FInterpTo(
+			CameraBoom->TargetArmLength, CurrentArmLength, DeltaTime, CameraInterpSpeed);
 
-        // Set boom world rotation directly ? completely independent
-        // of controller rotation. This avoids jitter from legacy input
-        // or PlayerController fighting over the rotation.
-        const FRotator CurrentRot = CameraBoom->GetComponentRotation();
-        const float NewPitch = FMath::FInterpTo(
-            CurrentRot.Pitch, DesiredPitch, DeltaTime, CameraInterpSpeed);
-        CameraBoom->SetWorldRotation(FRotator(NewPitch, DesiredYaw, 0.0f));
-    }
-    else if (CurrentCameraMode == EWoE_CameraMode::FirstPerson)
-    {
-        CameraBoom->TargetArmLength = FMath::FInterpTo(
-            CameraBoom->TargetArmLength, 0.0f, DeltaTime, CameraInterpSpeed);
-        // Rotation handled by bUsePawnControlRotation + AddControllerYaw/PitchInput.
-    }
+		// Set boom world rotation directly - independent of controller rotation.
+		// SetAbsolute(rotation=true) allows direct world rotation.
+		const FRotator CurrentRot = CameraBoom->GetComponentRotation();
+		const float NewPitch = FMath::FInterpTo(
+			CurrentRot.Pitch, DesiredPitch, DeltaTime, CameraInterpSpeed);
+
+		// Yaw applied instantly for 1:1 mouse response. Pitch interpolated for smooth mode switch.
+		CameraBoom->SetWorldRotation(FRotator(NewPitch, DesiredYaw, 0.0f));
+	}
+	else if (CurrentCameraMode == EWoE_CameraMode::FirstPerson)
+	{
+		// Smoothly reduce arm length to 0. Interpolation x2 for fast FP transition.
+		CameraBoom->TargetArmLength = FMath::FInterpTo(
+			CameraBoom->TargetArmLength, 0.0f, DeltaTime, CameraInterpSpeed * 2.0f);
+
+		// Rotation fully controlled by bUsePawnControlRotation + AddControllerYaw/PitchInput from OnLook.
+	}
 }
 
 // ================================================================
-// CAMERA ? apply mode
+// CAMERA - apply mode
 // ================================================================
 void AWoE_Character::ApplyCameraMode(EWoE_CameraMode NewMode)
 {
-    CurrentCameraMode = NewMode;
+	CurrentCameraMode = NewMode;
 
-    switch (NewMode)
-    {
-    case EWoE_CameraMode::Exploration:
-    {
-        GetCharacterMovement()->bOrientRotationToMovement = true;
-        bUseControllerRotationYaw = false;
+	switch (NewMode)
+	{
+	// ------------------------------------------------------------------------
+	//  EXPLORATION
+	// ------------------------------------------------------------------------
+	case EWoE_CameraMode::Exploration:
+	{
+		// --- Character ---
+		// Body rotates toward movement direction (like TPS).
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		bUseControllerRotationYaw = false;
 
-        CameraBoom->bUsePawnControlRotation = false;
-        CameraBoom->SetAbsolute(false, true, false);
-        CameraBoom->bDoCollisionTest = false;
-        CameraBoom->bEnableCameraLag = true;
-        CameraBoom->TargetOffset = FVector::ZeroVector;
-        CameraBoom->SocketOffset = FVector::ZeroVector;
+		// --- Boom ---
+		CameraBoom->SetAbsolute(false, true, false);
+		CameraBoom->bUsePawnControlRotation = false;
+		CameraBoom->bDoCollisionTest = true;
+		CameraBoom->bEnableCameraLag = true;
+		CameraBoom->CameraLagSpeed = 8.0f;
+		CameraBoom->TargetOffset = FVector::ZeroVector;
+		CameraBoom->SocketOffset = FVector::ZeroVector;
+		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, FirstPersonCameraHeight));
 
-        DesiredYaw = CameraBoom->GetComponentRotation().Yaw;
-        DesiredPitch = CameraBoom->GetComponentRotation().Pitch;
+		// --- Sync angles ---
+		// Take current Yaw from Controller Rotation (from FP mode) into DesiredYaw for smooth transition.
+		if (Controller)
+		{
+			DesiredYaw = Controller->GetControlRotation().Yaw;
+		}
+		DesiredPitch = ExplorationPitch;
 
-        if (CurrentArmLength < MinArmLength + 50.0f)
-        {
-            CurrentArmLength = 1200.0f;
-        }
+		if (CurrentArmLength < MinArmLength + 50.0f)
+		{
+			CurrentArmLength = 1200.0f;
+		}
 
-        UE_LOG(LogTemp, Log, TEXT("Camera: Exploration mode"));
-        break;
-    }
+		if (GetMesh())
+		{
+			GetMesh()->SetOwnerNoSee(false);
+		}
 
-    case EWoE_CameraMode::FirstPerson:
-    {
-        GetCharacterMovement()->bOrientRotationToMovement = false;
-        bUseControllerRotationYaw = true;
+		UE_LOG(LogTemp, Log, TEXT("Camera -> Exploration"));
+		break;
+	}
 
-        CameraBoom->bUsePawnControlRotation = true;
-        CameraBoom->SetAbsolute(false, false, false);
-        CameraBoom->bDoCollisionTest = true;
-        CameraBoom->bEnableCameraLag = false;
-        CameraBoom->TargetOffset = FVector(0.0f, 0.0f, FirstPersonCameraHeight);
-        CameraBoom->SocketOffset = FVector(15.0f, 0.0f, 0.0f);
+	// ------------------------------------------------------------------------
+	//  FIRST PERSON
+	// ------------------------------------------------------------------------
+	case EWoE_CameraMode::FirstPerson:
+	{
+		// --- Sync angles (BEFORE changing flags!) ---
+		// Transfer current camera angles (DesiredYaw + DesiredPitch) to Controller Rotation.
+		// Previously pitch was forced to 0 - camera jerked. Now transition is smooth.
+		if (Controller)
+		{
+			Controller->SetControlRotation(FRotator(DesiredPitch, DesiredYaw, 0.0f));
+		}
 
-        if (Controller)
-        {
-            Controller->SetControlRotation(FRotator(0.0f, DesiredYaw, 0.0f));
-        }
+		// --- Character ---
+		bUseControllerRotationYaw = true;
+		GetCharacterMovement()->bOrientRotationToMovement = false;
 
-        CurrentArmLength = 0.0f;
+		// --- Boom ---
+		CameraBoom->SetAbsolute(false, false, false);
+		CameraBoom->bUsePawnControlRotation = true;
+		CameraBoom->bDoCollisionTest = false;
+		CameraBoom->bEnableCameraLag = false;
+		CameraBoom->TargetOffset = FVector::ZeroVector;
+		CameraBoom->SocketOffset = FVector::ZeroVector;
+		CameraBoom->SetRelativeLocation(FVector(0.f, 0.f, FirstPersonCameraHeight));
 
-        UE_LOG(LogTemp, Log, TEXT("Camera: First Person mode"));
-        break;
-    }
-    }
+		CurrentArmLength = 0.0f;
+
+		// SetOwnerNoSee: mesh not rendered for owning Pawn. Other players still see your model.
+		if (bHideMeshInFirstPerson && GetMesh())
+		{
+			GetMesh()->SetOwnerNoSee(true);
+		}
+
+		UE_LOG(LogTemp, Log, TEXT("Camera -> First Person"));
+		break;
+	}
+	}
 }

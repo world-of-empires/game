@@ -4,6 +4,37 @@
 
 ---
 
+## [0.2.1] — 19.02.2026
+
+**First Person Fix + English Comments** | Исправление FP-режима, перевод комментариев на английский
+
+### Изменено
+
+- **Source/WorldOfEmpires/Core/WoE_Character.h**:
+  - Добавлено `bHideMeshInFirstPerson` (bool) — скрывать меш от владельца в FP (нет клиппинга тела)
+  - Добавлено `FirstPersonLookSensitivity` (float) — отдельная чувствительность мыши для FP
+  - Категория `WoE|Camera|FirstPerson` для FP-настроек
+  - Комментарии переведены на английский
+- **Source/WorldOfEmpires/Core/WoE_Character.cpp**:
+  - **FP-FIX:** Высота камеры через `SetRelativeLocation` на boom (единая для обоих режимов)
+  - **FP-FIX:** `bDoCollisionTest=true` — камера не проходит сквозь стены в Exploration
+  - **FP-FIX:** При переключении в FP — передача `DesiredPitch` в `SetControlRotation` (нет рывка камеры)
+  - **FP-FIX:** `FirstPersonLookSensitivity` для мыши в FP
+  - **FP-FIX:** `bHideMeshInFirstPerson` → `SetOwnerNoSee(true)` — тело скрыто в FP (руки видны при `false`)
+  - **FP-FIX:** `bShowMouseCursor=false`, `FInputModeGameOnly` в BeginPlay
+  - **FP-FIX:** При переключении Exploration←FP: `DesiredYaw` из `Controller->GetControlRotation().Yaw`
+  - Комментарии переведены на английский
+
+### Документация
+
+- **docs/AI_CONTEXT.md** — обновлён раздел AWoE_Character (bHideMeshInFirstPerson, FirstPersonLookSensitivity, архитектура камеры)
+- **docs/CHANGELOG.md** — добавлена запись 0.2.1
+- **docs/ROADMAP.md** — обновлена версия, добавлены пункты FP-FIX
+- **docs/ARCHITECTURE.md** — обновлена версия
+- **docs/VERSION** — 0.2.1
+
+---
+
 ## [0.2.0] — 19.02.2026
 
 **Камера King's Bounty** | Полная переработка системы камеры — top-down вид + переключение на First Person
@@ -185,6 +216,7 @@
 
 | Версия | Дата       | Содержание                                      |
 |--------|------------|-------------------------------------------------|
+| 0.2.1  | 19.02.2026 | FP-FIX, bHideMeshInFirstPerson, English comments |
 | 0.2.0  | 19.02.2026 | Камера King's Bounty, top-down + FP, UE 5.7 fix |
 | 0.1.2  | 19.02.2025 | Input Actions, Blueprint (UE)                   |
 | 0.1.1  | 19.02.2025 | docs в git, комментарии                         |
