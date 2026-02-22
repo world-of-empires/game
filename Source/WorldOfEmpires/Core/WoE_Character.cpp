@@ -16,7 +16,7 @@ AWoE_Character::AWoE_Character()
     CameraBoom->SetupAttachment(RootComponent);
     CameraBoom->bUsePawnControlRotation = false;
     CameraBoom->SetAbsolute(false, true, false);
-    //CameraBoom->TargetArmLength = 1200.0f;
+    CameraBoom->TargetArmLength = 1200.0f;
     CameraBoom->bDoCollisionTest = false;
     CameraBoom->bEnableCameraLag = true;
     CameraBoom->CameraLagSpeed = 8.0f;
@@ -36,12 +36,14 @@ AWoE_Character::AWoE_Character()
 
     // ---- Default camera values (King's Bounty top-down style) ----
     CurrentCameraMode = EWoE_CameraMode::Exploration;
-    CurrentArmLength = 400.0f;
-    MinArmLength = 400.0f;
-    MaxArmLength = 800.0f;
+    CurrentArmLength = 1200.0f;
+    MinArmLength = 300.0f;
+    MaxArmLength = 2500.0f;
     ExplorationPitch = -55.0f;
     DesiredYaw = 0.0f;
-    ExplorationYawSensitivity = 0.3f;
+    DesiredPitch = -55.0f;
+    ExplorationYawSensitivity = 1.0f;
+    FirstPersonCameraHeight = 70.0f;
     ZoomSpeed = 80.0f;
     CameraInterpSpeed = 8.0f;
 }
@@ -67,11 +69,11 @@ void AWoE_Character::BeginPlay()
     }
 
     DesiredYaw = GetActorRotation().Yaw;
+    DesiredPitch = ExplorationPitch;
 
-    // Set camera rotation immediately so the first frame is correct.
     if (CameraBoom)
     {
-        CameraBoom->SetWorldRotation(FRotator(ExplorationPitch, DesiredYaw, 0.0f));
+        CameraBoom->SetWorldRotation(FRotator(DesiredPitch, DesiredYaw, 0.0f));
     }
 
     if (APlayerController* PC = Cast<APlayerController>(Controller))
@@ -180,6 +182,8 @@ void AWoE_Character::OnLook(const FInputActionValue& Value)
     else
     {
         DesiredYaw += LookAxisVector.X * ExplorationYawSensitivity;
+        DesiredPitch += LookAxisVector.Y * ExplorationYawSensitivity;
+        DesiredPitch = FMath::Clamp(DesiredPitch, -89.0f, -5.0f);
     }
 }
 
@@ -222,7 +226,7 @@ void AWoE_Character::UpdateCamera(float DeltaTime)
         // or PlayerController fighting over the rotation.
         const FRotator CurrentRot = CameraBoom->GetComponentRotation();
         const float NewPitch = FMath::FInterpTo(
-            CurrentRot.Pitch, ExplorationPitch, DeltaTime, CameraInterpSpeed);
+            CurrentRot.Pitch, DesiredPitch, DeltaTime, CameraInterpSpeed);
         CameraBoom->SetWorldRotation(FRotator(NewPitch, DesiredYaw, 0.0f));
     }
     else if (CurrentCameraMode == EWoE_CameraMode::FirstPerson)
@@ -251,16 +255,18 @@ void AWoE_Character::ApplyCameraMode(EWoE_CameraMode NewMode)
         CameraBoom->SetAbsolute(false, true, false);
         CameraBoom->bDoCollisionTest = false;
         CameraBoom->bEnableCameraLag = true;
+        CameraBoom->TargetOffset = FVector::ZeroVector;
+        CameraBoom->SocketOffset = FVector::ZeroVector;
 
-        // Capture current camera yaw so there's no snap on mode switch.
         DesiredYaw = CameraBoom->GetComponentRotation().Yaw;
+        DesiredPitch = CameraBoom->GetComponentRotation().Pitch;
 
         if (CurrentArmLength < MinArmLength + 50.0f)
         {
             CurrentArmLength = 1200.0f;
         }
 
-        UE_LOG(LogTemp, Log, TEXT("Camera: Exploration (Top-Down) mode"));
+        UE_LOG(LogTemp, Log, TEXT("Camera: Exploration mode"));
         break;
     }
 
@@ -273,8 +279,9 @@ void AWoE_Character::ApplyCameraMode(EWoE_CameraMode NewMode)
         CameraBoom->SetAbsolute(false, false, false);
         CameraBoom->bDoCollisionTest = true;
         CameraBoom->bEnableCameraLag = false;
+        CameraBoom->TargetOffset = FVector(0.0f, 0.0f, FirstPersonCameraHeight);
+        CameraBoom->SocketOffset = FVector(15.0f, 0.0f, 0.0f);
 
-        // Hand off current camera yaw to controller for FP look.
         if (Controller)
         {
             Controller->SetControlRotation(FRotator(0.0f, DesiredYaw, 0.0f));

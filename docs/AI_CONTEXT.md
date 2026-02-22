@@ -75,11 +75,13 @@
 | `FollowCamera` | UCameraComponent | Камера, прикреплена к концу boom |
 | `CurrentCameraMode` | EWoE_CameraMode | Exploration (Top-Down) / FirstPerson |
 | `CurrentArmLength` | float | Текущая дистанция камеры (1200 по умолчанию) |
-| `MinArmLength` | float | Мин. зум (400) |
-| `MaxArmLength` | float | Макс. зум (800) |
-| `ExplorationPitch` | float | Угол наклона top-down (-55°, ClampMin=-89, ClampMax=0) |
+| `MinArmLength` | float | Мин. зум (300) |
+| `MaxArmLength` | float | Макс. зум (2500) |
+| `ExplorationPitch` | float | Начальный угол pitch top-down (-55°, ClampMin=-89, ClampMax=0) |
 | `DesiredYaw` | float | Yaw камеры в Exploration (управляется мышью) |
-| `ExplorationYawSensitivity` | float | Чувствительность мыши для yaw (0.3, Clamp 0.1–5.0) |
+| `DesiredPitch` | float | Pitch камеры в Exploration (управляется мышью, Clamp -89..-5) |
+| `FirstPersonCameraHeight` | float | Высота камеры в First Person (70, Clamp 0–150) |
+| `ExplorationYawSensitivity` | float | Чувствительность мыши (1.0, Clamp 0.1–5.0) |
 | `ZoomSpeed` | float | Скорость зума (80) |
 | `CameraInterpSpeed` | float | Скорость интерполяции камеры (8) |
 | `DefaultMappingContext` | UInputMappingContext | IMC_Default |
@@ -90,14 +92,14 @@
 | Метод | Описание |
 |-------|----------|
 | `OnMove` | WASD движение; в Exploration — относительно DesiredYaw, в FP — относительно controller rotation |
-| `OnLook` | Мышь; в Exploration — модифицирует DesiredYaw, в FP — AddControllerYaw/PitchInput |
+| `OnLook` | Мышь; в Exploration — модифицирует DesiredYaw и DesiredPitch, в FP — AddControllerYaw/PitchInput |
 | `OnZoom` | Колесо мыши; изменяет CurrentArmLength (только в Exploration) |
 | `OnToggleCameraMode` | Переключает Exploration ↔ FirstPerson |
 | `UpdateCamera` | Каждый кадр (до Super::Tick); в Exploration — SetWorldRotation на boom; в FP — arm→0 |
 | `ApplyCameraMode` | Переключает bUsePawnControlRotation, SetAbsolute, collision, lag; синхронизирует yaw |
 
 **Архитектура камеры:**
-- Exploration: boom вращается через `SetWorldRotation` напрямую (pitch=ExplorationPitch, yaw=DesiredYaw). Controller rotation НЕ используется. Boom имеет `bAbsoluteRotation=true` — независим от вращения персонажа.
+- Exploration: boom вращается через `SetWorldRotation` напрямую (pitch=DesiredPitch, yaw=DesiredYaw). Controller rotation НЕ используется. Boom имеет `bAbsoluteRotation=true` — независим от вращения персонажа.
 - FirstPerson: boom использует `bUsePawnControlRotation=true`, arm length=0. Мышь управляет controller rotation.
 - Переключение: yaw передаётся между DesiredYaw и controller rotation для плавного перехода.
 

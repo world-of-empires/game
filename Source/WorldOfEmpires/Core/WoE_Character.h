@@ -86,10 +86,16 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Camera")
 	float DesiredYaw;
 
-	// Mouse sensitivity for yaw rotation in Exploration mode.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Camera")
+	float DesiredPitch;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera",
 		meta = (ClampMin = "0.1", ClampMax = "5.0"))
 	float ExplorationYawSensitivity;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera",
+		meta = (ClampMin = "0.0", ClampMax = "150.0"))
+	float FirstPersonCameraHeight;
 
 	// Zoom speed per one scroll "click".
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera")

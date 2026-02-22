@@ -13,18 +13,21 @@
 - **Source/WorldOfEmpires/Core/WoE_Character.h** — переработан:
   - `EWoE_CameraMode::Exploration` переименован в "Exploration (Top-Down)"
   - Добавлено свойство `DesiredYaw` (float) — yaw камеры, управляемый мышью
-  - Добавлено свойство `ExplorationYawSensitivity` (float) — чувствительность мыши в Exploration
+  - Добавлено свойство `DesiredPitch` (float) — pitch камеры в Exploration (управляется мышью)
+  - Добавлено свойство `FirstPersonCameraHeight` (float) — высота камеры в First Person (70, Clamp 0–150)
+  - Добавлено свойство `ExplorationYawSensitivity` (float) — чувствительность мыши (1.0, Clamp 0.1–5.0)
   - `ExplorationPitch` получил meta-ограничение ClampMin/ClampMax (-89..0)
 - **Source/WorldOfEmpires/Core/WoE_Character.cpp** — переработан:
   - **Камера King's Bounty:** top-down вид с pitch -55°, arm length 1200, zoom 400–800
   - **Архитектура камеры:** CameraBoom использует `bAbsoluteRotation` (через `SetAbsolute`) и `bUsePawnControlRotation = false` в Exploration — ротация boom полностью независима от controller rotation и вращения персонажа
   - **Tick:** `UpdateCamera` вызывается ДО `Super::Tick` — Spring Arm видит актуальную ротацию в том же кадре
-  - **UpdateCamera (Exploration):** управляет boom напрямую через `SetWorldRotation`, не использует controller rotation
-  - **OnLook (Exploration):** модифицирует только `DesiredYaw`, не трогает controller rotation
+  - **UpdateCamera (Exploration):** управляет boom через `SetWorldRotation` (pitch=DesiredPitch, yaw=DesiredYaw)
+  - **OnLook (Exploration):** модифицирует `DesiredYaw` и `DesiredPitch` (Clamp -89..-5), не трогает controller rotation
+  - **Zoom:** MinArmLength 300, MaxArmLength 2500, TargetArmLength 1200
   - **OnMove:** использует `DesiredYaw` для направления движения в Exploration (camera-relative WASD)
   - **BeginPlay:** принудительно устанавливает настройки компонентов CameraBoom (защита от Blueprint-перезаписи старых значений)
-  - **ApplyCameraMode:** переключает `bUsePawnControlRotation`, `SetAbsolute`, `bDoCollisionTest`, `bEnableCameraLag` при смене режима
-  - **Плавные переходы:** при переключении Exploration↔FirstPerson yaw передаётся между DesiredYaw и controller rotation без рывков
+  - **ApplyCameraMode:** переключает `bUsePawnControlRotation`, `SetAbsolute`, `bDoCollisionTest`, `bEnableCameraLag`; First Person — TargetOffset/SocketOffset для высоты камеры
+  - **Плавные переходы:** при переключении Exploration↔FirstPerson yaw и pitch передаются между DesiredYaw/DesiredPitch и controller rotation без рывков
   - **Защита от спайков:** дельты > 200 px отбрасываются (защита при захвате мыши / фокусе окна)
   - Добавлен диагностический `UE_LOG` в BeginPlay
 
@@ -33,6 +36,14 @@
 - Камера больше не переворачивается вверх дном при первом клике мыши
 - Устранено дрожание камеры (jitter) из-за конфликта между OnLook и UpdateCamera за controller rotation
 - Устранена зависимость boom от вращения персонажа при ходьбе
+
+### Unreal Engine
+
+- **Config/DefaultEngine.ini** (UE) — GlobalDefaultGameMode = BP_WoE_GameMode
+- **Content/Core/Characters/BP_WoE_Character.uasset** (UE) — обновление настроек
+- **Content/Input/IMC_Default.uasset** (UE) — обновление маппинга
+- **Content/Core/Characters/Mannequins/** (UE) — обновление мешей (SKM_Manny, SKM_Quinn), анимаций, ригов
+- **Content/__ExternalActors__/** (UE) — удалены шаблонные уровни Variant_Combat, Variant_SideScrolling
 
 ### Совместимость
 
