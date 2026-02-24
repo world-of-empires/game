@@ -5,7 +5,11 @@
 // Two-mesh architecture for FP:
 //   GetMesh()       - full body, hidden from owner in FP, casts complete shadow
 //   FirstPersonMesh - body copy visible only to owner, head/neck hidden, no shadow
-
+//
+// Click-to-move (Exploration only):
+//   LMB click traces ground → character walks to point
+//   WASD cancels click-to-move immediately
+//   RMB hold enables camera rotation (cursor hidden during rotation)
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
@@ -94,16 +98,17 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|Exploration")
 	float ZoomSpeed;
 
-	// Spring arm pivot height above capsule center.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|Exploration",
 		meta = (ClampMin = "0.0", ClampMax = "200.0"))
 	float ExplorationBoomHeight;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Camera|Exploration")
+	bool bIsRotatingCamera;
 
 	// ============================================================
 	// CAMERA - First Person
 	// ============================================================
 
-	// FP camera Z offset above capsule center. 60 ≈ eye level for default capsule.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|FirstPerson",
 		meta = (ClampMin = "-50.0", ClampMax = "200.0"))
 	float FirstPersonEyeHeight;
@@ -112,12 +117,10 @@ protected:
 		meta = (ClampMin = "0.1", ClampMax = "5.0"))
 	float FirstPersonLookSensitivity;
 
-	// Separate FOV for FP mesh rendering (arms). Lower = arms appear larger.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|FirstPerson",
 		meta = (ClampMin = "40", ClampMax = "120"))
 	float FirstPersonFOV;
 
-	// Scale for FP mesh rendering. <1 pulls arms back to prevent wall clipping.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|FirstPerson",
 		meta = (ClampMin = "0.1", ClampMax = "1.5"))
 	float FirstPersonScale;
@@ -136,6 +139,27 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Movement")
 	bool bIsWalking;
+
+	// ---- Click-to-move (Exploration only) ----
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Movement")
+	bool bIsClickMoving;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Movement")
+	FVector ClickMoveDestination;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Movement",
+		meta = (ClampMin = "10.0", ClampMax = "500.0"))
+	float ClickMoveAcceptanceRadius;
+
+	/** LMB is currently held down. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Movement")
+	bool bIsLMBHeld;
+
+	/** Time threshold to distinguish click vs hold (seconds). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Movement",
+		meta = (ClampMin = "0.05", ClampMax = "1.0"))
+	float ClickHoldThreshold;
 
 	// ============================================================
 	// INPUT
@@ -162,6 +186,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WoE|Input")
 	TObjectPtr<UInputAction> WalkAction;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WoE|Input")
+	TObjectPtr<UInputAction> ClickToMoveAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WoE|Input")
+	TObjectPtr<UInputAction> RotateCameraAction;
+
 	// ============================================================
 	// INPUT HANDLERS
 	// ============================================================
@@ -175,12 +205,26 @@ protected:
 	void OnWalkStarted(const FInputActionValue& Value);
 	void OnWalkCompleted(const FInputActionValue& Value);
 
+	void OnClickToMoveStarted(const FInputActionValue& Value);
+	void OnClickToMoveTriggered(const FInputActionValue& Value);
+	void OnClickToMoveReleased(const FInputActionValue& Value);
+
+	void OnRotateCameraStarted(const FInputActionValue& Value);
+	void OnRotateCameraCompleted(const FInputActionValue& Value);
+
 	// ============================================================
-	// CAMERA - internal
+	// INTERNALS
 	// ============================================================
 
 	void UpdateCamera(float DeltaTime);
+	void UpdateClickToMove(float DeltaTime);
 	void ApplyCameraMode(EWoE_CameraMode NewMode);
+	void CancelClickToMove();
+	void ApplyCursorSettings(EWoE_CameraMode Mode);
+	bool TraceClickDestination();
 
 	bool bCameraInitialized;
+	float LMBPressTime;
+	float PreRotateMouseX;
+	float PreRotateMouseY;
 };

@@ -90,10 +90,19 @@
 | `FirstPersonLookSensitivity` | float | Чувствительность мыши в FP (1.0) |
 | `RunSpeed`, `WalkSpeed` | float | 600 / 300 |
 | `bIsWalking` | bool | Режим ходьбы (Shift) |
+| `bIsClickMoving`, `bIsLMBHeld` | bool | Click-to-move: идёт к точке / LMB зажат |
+| `ClickMoveDestination`, `ClickMoveAcceptanceRadius` (50), `ClickHoldThreshold` (0.2) | FVector/float | Точка назначения, радиус прибытия, порог click vs hold |
+| `bIsRotatingCamera` | bool | RMB зажат — вращение камеры |
 | `DefaultMappingContext` | UInputMappingContext | IMC_Default |
-| `MoveAction`, `LookAction`, `ZoomAction`, `ToggleCameraModeAction`, `JumpAction`, `WalkAction` | UInputAction | Input Actions |
+| `MoveAction`, `LookAction`, `ZoomAction`, `ToggleCameraModeAction`, `JumpAction`, `WalkAction`, `ClickToMoveAction`, `RotateCameraAction` | UInputAction | Input Actions |
 
-**Методы:** `OnMove`, `OnLook`, `OnZoom`, `OnToggleCameraMode`, `OnJumpStarted`, `OnJumpCompleted`, `OnWalkStarted`, `OnWalkCompleted`, `UpdateCamera`, `ApplyCameraMode`
+**Методы:** `OnMove`, `OnLook`, `OnZoom`, `OnToggleCameraMode`, `OnJumpStarted`, `OnJumpCompleted`, `OnWalkStarted`, `OnWalkCompleted`, `OnClickToMoveStarted/Triggered/Released`, `OnRotateCameraStarted/Completed`, `UpdateCamera`, `UpdateClickToMove`, `ApplyCameraMode`, `CancelClickToMove`, `ApplyCursorSettings`, `TraceClickDestination`
+
+**Click-to-move (только Exploration):**
+- LMB клик → trace ground → бег к точке; LMB зажатие → бег за курсором
+- LMB зажат → WASD блокируется; LMB не зажат → WASD отменяет click-to-move
+- RMB зажатие → вращение камеры, курсор скрыт
+- FirstPerson: click-to-move отключён, курсор скрыт
 
 **Архитектура камеры:**
 - **Exploration:** CameraBoom + FollowCamera. Boom `SetAbsolute(rotation=true)`, `bDoCollisionTest=true`. Pitch/Yaw через DesiredPitch/DesiredYaw.
@@ -117,6 +126,8 @@
 | `IA_ToggleCameraMode` | Input Action | Переключение камеры (V) |
 | `IA_Jump` | Input Action | Прыжок (Space) |
 | `IA_Walk` | Input Action | Ходьба (Shift) |
+| `IA_ClickToMove` | Input Action (Bool) | LMB — click-to-move |
+| `IA_RotateCamera` | Input Action (Bool) | RMB — вращение камеры |
 
 **Blueprint (Content/Core/Characters/):**
 
@@ -188,6 +199,6 @@
 
 ---
 
-*Документ актуален для версии 0.2.2. Обновляй при добавлении нового API.*
+*Документ актуален для версии 0.2.3. Обновляй при добавлении нового API.*
 
 **Как обновлять:** см. DEVELOPER_GUIDE.md (раздел «Как правильно зафиксировать изменения»)

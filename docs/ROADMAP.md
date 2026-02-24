@@ -3,7 +3,7 @@
 Дорожная карта разработки игры на Unreal Engine 5.7.  
 Отмеченные пункты считаются завершёнными на текущем этапе.
 
-**Текущая версия:** v0.2.2 | **Последнее обновление:** 19.02.2026
+**Текущая версия:** v0.2.3 | **Последнее обновление:** 19.02.2025
 
 ---
 
@@ -55,6 +55,8 @@
 - [x] Two-mesh FP: FirstPersonCamera на Capsule, FirstPersonMesh (руки), WorldSpaceRepresentation для тени — v0.2.2
 - [x] Run/Walk (Shift), Jump (Space) — v0.2.2
 - [x] IA_Jump, IA_Walk, MainMap — v0.2.2
+- [x] Click-to-move (LMB): клик → бег к точке, зажатие → бег за курсором — v0.2.3
+- [x] RMB — вращение камеры (курсор скрыт), приоритет LMB над WASD — v0.2.3
 
 ### Часть 7: Input Assets (UE Editor)
 
@@ -64,6 +66,8 @@
 - [x] IA_ToggleCameraMode (Digital) — клавиша V
 - [x] IA_Jump (Digital) — Space
 - [x] IA_Walk (Digital) — Shift
+- [x] IA_ClickToMove (Bool) — LMB
+- [x] IA_RotateCamera (Bool) — RMB
 - [x] IMC_Default — маппинг контекст со Swizzle YXZ для W/S
 
 ### Часть 8: Blueprint-наследник
@@ -204,8 +208,9 @@
 
 | Версия | Дата       | Содержание                                     | Статус      |
 |--------|------------|------------------------------------------------|-------------|
-| v0.2.2 | 19.02.2026 | Two-mesh FP, Run/Walk, Jump, IA_Walk, MainMap   | Выпущено    |
-| v0.2.1 | 19.02.2026 | FP-FIX, bHideMeshInFirstPerson, English comments | Выпущено    |
+| v0.2.3 | 19.02.2025 | Click-to-move (LMB), RMB вращение камеры        | Выпущено    |
+| v0.2.2 | 24.02.2026 | Two-mesh FP, Run/Walk, Jump, IA_Walk, MainMap   | Выпущено    |
+| v0.2.1 | 22.02.2026 | FP-FIX, bHideMeshInFirstPerson, English comments | Выпущено    |
 | v0.2.0 | 19.02.2026 | Камера King's Bounty, top-down + FP, UE 5.7 fix | Выпущено    |
 | v0.1.2 | 19.02.2025 | Input Actions, Blueprint (UE)                  | Выпущено    |
 | v0.1.1 | 19.02.2025 | docs в git, комментарии                        | Выпущено    |
@@ -225,4 +230,4 @@
 
 ---
 
-*Последнее обновление: 19.02.2026 (v0.2.2)*
+*Последнее обновление: 19.02.2025 (v0.2.3)*

@@ -4,7 +4,40 @@
 
 ---
 
-## [0.2.2] — 19.02.2026
+## [0.2.3] — 19.02.2025
+
+**Click-to-Move (Exploration)** | LMB — бег к точке/за курсором, RMB — вращение камеры
+
+### Добавлено
+
+- **Source/WorldOfEmpires/Core/WoE_Character.h**:
+  - `ClickToMoveAction`, `RotateCameraAction` (UInputAction)
+  - `bIsClickMoving`, `bIsLMBHeld`, `ClickMoveDestination`, `ClickMoveAcceptanceRadius` (50), `ClickHoldThreshold` (0.2)
+  - `bIsRotatingCamera` — флаг вращения камеры RMB
+  - `OnClickToMoveStarted`, `OnClickToMoveTriggered`, `OnClickToMoveReleased`
+  - `OnRotateCameraStarted`, `OnRotateCameraCompleted`
+  - `UpdateClickToMove`, `TraceClickDestination`, `CancelClickToMove`, `ApplyCursorSettings`
+- **Source/WorldOfEmpires/Core/WoE_Character.cpp**:
+  - **Click-to-move:** LMB клик → trace ground → бег к точке; LMB зажатие → бег за курсором каждый кадр
+  - **Приоритет:** LMB зажат → WASD блокируется; LMB не зажат → WASD отменяет click-to-move
+  - **RMB:** зажатие — вращение камеры (курсор скрыт, позиция восстанавливается при отпускании)
+  - **OnLook:** вращение камеры только при `bIsRotatingCamera` (RMB)
+  - **FirstPerson:** click-to-move отключён; курсор скрыт
+
+### Изменено
+
+- **Source/WorldOfEmpires/Core/WoE_Character.cpp** — `OnMove`: при `bIsLMBHeld` WASD игнорируется; `OnLook`: только при RMB
+
+### Unreal Engine
+
+- **Content/Input/Actions/IA_ClickToMove.uasset** (UE) — Input Action (Bool), LMB
+- **Content/Input/Actions/IA_RotateCamera.uasset** (UE) — Input Action (Bool), RMB
+- **Content/Input/IMC_Default.uasset** (UE) — привязки IA_ClickToMove, IA_RotateCamera
+- **Content/Core/Characters/BP_WoE_Character.uasset** (UE) — ClickToMoveAction, RotateCameraAction
+
+---
+
+## [0.2.2] — 24.02.2026
 
 **Two-mesh First Person + Run/Walk + Jump** | Архитектура FP с отдельной камерой и мешем, движение Run/Walk, прыжок
 
@@ -60,7 +93,7 @@
 
 ---
 
-## [0.2.1] — 19.02.2026
+## [0.2.1] — 22.02.2026
 
 **First Person Fix + English Comments** | Исправление FP-режима, перевод комментариев на английский
 
@@ -270,13 +303,14 @@
 
 Проект использует [Semantic Versioning](https://semver.org/).
 
-| Версия | Дата       | Содержание                                      |
-|--------|------------|-------------------------------------------------|
-| 0.2.1  | 19.02.2026 | FP-FIX, bHideMeshInFirstPerson, English comments |
-| 0.2.0  | 19.02.2026 | Камера King's Bounty, top-down + FP, UE 5.7 fix |
-| 0.1.2  | 19.02.2025 | Input Actions, Blueprint (UE)                   |
-| 0.1.1  | 19.02.2025 | docs в git, комментарии                         |
-| 0.1.0  | 19.02.2025 | AWoE_Character с камерой                        |
-| 0.0.2  | 19.02.2025 | Документация и автоматизация                    |
-| 0.0.1  | 19.02.2025 | Документация                                    |
-| 0.0.0  | 19.02.2025 | Инициализация проекта                           |
+| Версия  | Дата       | Содержание                                      |
+|---------|------------|-------------------------------------------------|
+| v0.2.2  | 24.02.2026 | Two-mesh FP, Run/Walk, Jump, IA_Walk, MainMap   |
+| v0.2.1  | 22.02.2026 | FP-FIX, bHideMeshInFirstPerson, English comments|
+| v0.2.0  | 19.02.2026 | Камера King's Bounty, top-down + FP, UE 5.7 fix |
+| v0.1.2  | 19.02.2025 | Input Actions, Blueprint (UE)                   |
+| v0.1.1  | 19.02.2025 | docs в git, комментарии                         |
+| v0.1.0  | 19.02.2025 | AWoE_Character с камерой                        |
+| v0.0.2  | 19.02.2025 | Документация и автоматизация                    |
+| v0.0.1  | 19.02.2025 | Документация                                    |
+| v0.0.0  | 19.02.2025 | Инициализация проекта                           |
