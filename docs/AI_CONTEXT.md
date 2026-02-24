@@ -69,43 +69,38 @@
 
 **Файлы:** `Source/WorldOfEmpires/Core/WoE_Character.h`, `WoE_Character.cpp`
 
+**Компоненты:**
+
+| Компонент | Тип | Описание |
+|-----------|-----|----------|
+| `CameraBoom` | USpringArmComponent | Spring Arm для Exploration (top-down) |
+| `FollowCamera` | UCameraComponent | Камера на конце boom |
+| `FirstPersonCamera` | UCameraComponent | Отдельная камера на Capsule для FP, `bEnableFirstPersonFieldOfView`, `FirstPersonScale` |
+| `FirstPersonMesh` | USkeletalMeshComponent | Меш для FP (руки владельца), LeaderPose от GetMesh(), голова/шея скрыты |
+
+**Свойства:**
+
 | Свойство | Тип | Описание |
 |----------|-----|----------|
-| `CameraBoom` | USpringArmComponent | Spring Arm — `SetAbsolute(rotation=true)`, `bUsePawnControlRotation=false` в Exploration |
-| `FollowCamera` | UCameraComponent | Камера, прикреплена к концу boom |
-| `CurrentCameraMode` | EWoE_CameraMode | Exploration (Top-Down) / FirstPerson |
-| `CurrentArmLength` | float | Текущая дистанция камеры (1200 по умолчанию) |
-| `MinArmLength` | float | Мин. зум (300) |
-| `MaxArmLength` | float | Макс. зум (2500) |
-| `ExplorationPitch` | float | Начальный угол pitch top-down (-55°, ClampMin=-89, ClampMax=0) |
-| `DesiredYaw` | float | Yaw камеры в Exploration (управляется мышью) |
-| `DesiredPitch` | float | Pitch камеры в Exploration (управляется мышью, Clamp -89..-5) |
-| `FirstPersonCameraHeight` | float | Высота камеры над корнем капсулы (70, Clamp 0–200) |
-| `bHideMeshInFirstPerson` | bool | Скрывать меш от владельца в FP (true = нет клиппинга тела) |
-| `FirstPersonLookSensitivity` | float | Чувствительность мыши в FP (1.0, Clamp 0.1–5.0) |
-| `ExplorationYawSensitivity` | float | Чувствительность мыши в Exploration (1.0, Clamp 0.1–5.0) |
-| `ZoomSpeed` | float | Скорость зума (80) |
-| `CameraInterpSpeed` | float | Скорость интерполяции камеры (8) |
+| `CurrentCameraMode` | EWoE_CameraMode | Exploration / FirstPerson |
+| `CurrentArmLength`, `MinArmLength`, `MaxArmLength` | float | Зум (300–2500) |
+| `ExplorationPitch`, `DesiredYaw`, `DesiredPitch` | float | Pitch/Yaw камеры в Exploration |
+| `ExplorationYawSensitivity`, `ExplorationBoomHeight` | float | Чувствительность (1.0), высота boom (85) |
+| `FirstPersonEyeHeight`, `FirstPersonFOV`, `FirstPersonScale` | float | FP: высота камеры (70), FOV (70), масштаб меша (0.6) |
+| `FirstPersonLookSensitivity` | float | Чувствительность мыши в FP (1.0) |
+| `RunSpeed`, `WalkSpeed` | float | 600 / 300 |
+| `bIsWalking` | bool | Режим ходьбы (Shift) |
 | `DefaultMappingContext` | UInputMappingContext | IMC_Default |
-| `MoveAction`, `LookAction`, `ZoomAction`, `ToggleCameraModeAction` | UInputAction | Input Actions |
+| `MoveAction`, `LookAction`, `ZoomAction`, `ToggleCameraModeAction`, `JumpAction`, `WalkAction` | UInputAction | Input Actions |
 
-**Методы:**
-
-| Метод | Описание |
-|-------|----------|
-| `OnMove` | WASD движение; в Exploration — относительно DesiredYaw, в FP — относительно controller rotation |
-| `OnLook` | Мышь; в Exploration — DesiredYaw/DesiredPitch; в FP — AddControllerYaw/PitchInput с FirstPersonLookSensitivity |
-| `OnZoom` | Колесо мыши; изменяет CurrentArmLength (только в Exploration) |
-| `OnToggleCameraMode` | Переключает Exploration ↔ FirstPerson |
-| `UpdateCamera` | Каждый кадр (до Super::Tick); в Exploration — SetWorldRotation на boom; в FP — arm→0 |
-| `ApplyCameraMode` | Переключает bUsePawnControlRotation, SetAbsolute, collision, lag; синхронизирует yaw/pitch; SetOwnerNoSee при bHideMeshInFirstPerson |
+**Методы:** `OnMove`, `OnLook`, `OnZoom`, `OnToggleCameraMode`, `OnJumpStarted`, `OnJumpCompleted`, `OnWalkStarted`, `OnWalkCompleted`, `UpdateCamera`, `ApplyCameraMode`
 
 **Архитектура камеры:**
-- **Exploration:** boom вращается через `SetWorldRotation` (pitch=DesiredPitch, yaw=DesiredYaw). Boom `SetAbsolute(rotation=true)` — независим от персонажа. `bDoCollisionTest=true` — камера не проходит сквозь стены. Высота boom — `SetRelativeLocation(Z=FirstPersonCameraHeight)`.
-- **FirstPerson:** boom `bUsePawnControlRotation=true`, arm length=0. Мышь управляет controller rotation. `bHideMeshInFirstPerson` → `SetOwnerNoSee(true)` — тело скрыто от владельца. Курсор скрыт, `FInputModeGameOnly`.
-- **Переключение:** DesiredYaw/DesiredPitch ↔ Controller Rotation для плавного перехода без рывков.
+- **Exploration:** CameraBoom + FollowCamera. Boom `SetAbsolute(rotation=true)`, `bDoCollisionTest=true`. Pitch/Yaw через DesiredPitch/DesiredYaw.
+- **FirstPerson:** FirstPersonCamera на Capsule. GetMesh() → WorldSpaceRepresentation (тень), FirstPersonMesh → видим владельцу (руки). FirstPersonFieldOfView, FirstPersonScale для рендера FP-меша.
+- **Переключение:** DesiredYaw/DesiredPitch ↔ Controller Rotation.
 
-**Использование:** Blueprint **BP_WoE_Character** наследует AWoE_Character и задаёт IMC_Default + Actions. В World Settings → Default Pawn Class = BP_WoE_Character.
+**Использование:** Blueprint **BP_WoE_Character** наследует AWoE_Character, задаёт IMC_Default + Actions. World Settings → Default Pawn Class = BP_WoE_Character.
 
 ---
 
@@ -120,8 +115,10 @@
 | `IA_Look` | Input Action | 2D вектор обзора (мышь) |
 | `IA_Zoom` | Input Action | Зум (колёсико) |
 | `IA_ToggleCameraMode` | Input Action | Переключение камеры (V) |
+| `IA_Jump` | Input Action | Прыжок (Space) |
+| `IA_Walk` | Input Action | Ходьба (Shift) |
 
-**Blueprint (Content/WoE/Core/Characters/):**
+**Blueprint (Content/Core/Characters/):**
 
 | Ассет | Родитель | Описание |
 |-------|----------|----------|
@@ -191,6 +188,6 @@
 
 ---
 
-*Документ актуален для версии 0.2.1. Обновляй при добавлении нового API.*
+*Документ актуален для версии 0.2.2. Обновляй при добавлении нового API.*
 
 **Как обновлять:** см. DEVELOPER_GUIDE.md (раздел «Как правильно зафиксировать изменения»)

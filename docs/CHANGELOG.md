@@ -4,6 +4,62 @@
 
 ---
 
+## [0.2.2] — 19.02.2026
+
+**Two-mesh First Person + Run/Walk + Jump** | Архитектура FP с отдельной камерой и мешем, движение Run/Walk, прыжок
+
+### Добавлено
+
+- **Source/WorldOfEmpires/Core/WoE_Character.h**:
+  - `FirstPersonCamera` (UCameraComponent) — отдельная камера на Capsule для FP, `bEnableFirstPersonFieldOfView`, `FirstPersonScale`
+  - `FirstPersonMesh` (USkeletalMeshComponent) — меш для FP (руки владельца), `SetOnlyOwnerSee`, `FirstPersonPrimitiveType`, LeaderPose от GetMesh()
+  - `ExplorationBoomHeight` (float) — высота pivot Spring Arm (85)
+  - `FirstPersonEyeHeight` (float) — высота камеры FP над капсулой (70)
+  - `FirstPersonFOV` (float) — FOV для рендера FP-меша (70)
+  - `FirstPersonScale` (float) — масштаб FP-меша для предотвращения клиппинга (0.6)
+  - `RunSpeed`, `WalkSpeed` (float) — 600 / 300
+  - `bIsWalking` (bool) — режим ходьбы
+  - `JumpAction`, `WalkAction` (UInputAction)
+  - `OnJumpStarted`, `OnJumpCompleted`, `OnWalkStarted`, `OnWalkCompleted`
+- **Source/WorldOfEmpires/Core/WoE_Character.cpp**:
+  - **Two-mesh FP:** GetMesh() → WorldSpaceRepresentation (тень), FirstPersonMesh → видим владельцу, голова/шея скрыты
+  - **FirstPersonCamera** на CapsuleComponent, `bEnableFirstPersonFieldOfView`, `FirstPersonScale`
+  - **Run/Walk:** Shift для ходьбы, переключение MaxWalkSpeed
+  - **Jump:** привязка JumpAction
+  - `ExplorationBoomHeight` вместо FirstPersonCameraHeight для boom
+  - `VisibilityBasedAnimTickOption = AlwaysTickPoseAndRefreshBones` для LeaderPose
+
+### Изменено
+
+- **Source/WorldOfEmpires/Core/WoE_Character.h** — `FirstPersonCameraHeight` переименован в `FirstPersonEyeHeight`; удалён `bHideMeshInFirstPerson`
+- **Source/WorldOfEmpires/Core/WoE_Character.cpp** — ApplyCameraMode: переключение FollowCamera/FirstPersonCamera, FirstPersonMesh visibility
+
+### Unreal Engine
+
+- **Config/DefaultEngine.ini** (UE) — GameDefaultMap, EditorStartupMap = MainMap; ActiveGameNameRedirects TP_FirstPerson
+- **Config/DefaultInput.ini** (UE) — PrimaryAction (LMB, RightTrigger), ConsoleKeys=ё
+- **Content/Core/Characters/BP_WoE_Character.uasset** (UE) — JumpAction, WalkAction, FirstPersonMesh
+- **Content/Input/IMC_Default.uasset** (UE) — привязки Jump, Walk
+- **Content/Input/Actions/IA_Walk.uasset** (UE) — Input Action для ходьбы
+- **Content/Maps/** (UE) — MainMap
+- **Content/__ExternalActors__/**, **Content/__ExternalObjects__/** (UE) — данные уровней
+
+### Удалено
+
+- **Content/Core/Characters/Mannequins/Anims/Death/MM_Death_Back_01.uasset**, **MM_Death_Front_01.uasset** (UE)
+- **Content/Input/Actions/IA_Sprint.uasset** (UE) — заменён на IA_Walk
+
+### Документация
+
+- **docs/AI_CONTEXT.md** — FirstPersonCamera, FirstPersonMesh, RunSpeed, WalkSpeed, JumpAction, WalkAction
+- **docs/ARCHITECTURE.md** — версия 0.2.2
+- **docs/ROADMAP.md** — версия, пункты two-mesh FP, Run/Walk, Jump
+- **docs/DEVELOPER_GUIDE.md** — версия 0.2.2
+- **docs/PROMPT_FINALIZE_NO_COMMIT.md** — правки
+- **docs/VERSION** — 0.2.2
+
+---
+
 ## [0.2.1] — 19.02.2026
 
 **First Person Fix + English Comments** | Исправление FP-режима, перевод комментариев на английский

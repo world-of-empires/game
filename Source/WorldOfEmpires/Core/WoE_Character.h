@@ -1,10 +1,12 @@
-// Main character class for World of Empires.
-// ACharacter provides: Capsule, SkeletalMesh, CharacterMovement.
-// We add: hybrid camera (Exploration top-down + FirstPerson), input handling, mode switching.
-// Toggle camera with key V.
+// Character with hybrid camera system:
+//   Exploration - top-down view (CameraBoom + FollowCamera)
+//   FirstPerson - eye-level view (FirstPersonCamera on CapsuleComponent)
+//
+// Two-mesh architecture for FP:
+//   GetMesh()       - full body, hidden from owner in FP, casts complete shadow
+//   FirstPersonMesh - body copy visible only to owner, head/neck hidden, no shadow
 
 #pragma once
-
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "WoE_Character.generated.h"
@@ -15,20 +17,12 @@ class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
 
-// ================================================================
-// Camera modes
-// ================================================================
-
 UENUM(BlueprintType)
 enum class EWoE_CameraMode : uint8
 {
 	Exploration    UMETA(DisplayName = "Exploration (Top-Down)"),
 	FirstPerson    UMETA(DisplayName = "First Person"),
 };
-
-// ================================================================
-// Character
-// ================================================================
 
 UCLASS()
 class WORLDOFEMPIRES_API AWoE_Character : public ACharacter
@@ -37,17 +31,15 @@ class WORLDOFEMPIRES_API AWoE_Character : public ACharacter
 
 public:
 	AWoE_Character();
-
 	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(
-		class UInputComponent* PlayerInputComponent) override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
 	virtual void BeginPlay() override;
 
-	// ================================================================
+	// ============================================================
 	// COMPONENTS
-	// ================================================================
+	// ============================================================
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Camera")
 	TObjectPtr<USpringArmComponent> CameraBoom;
@@ -55,67 +47,99 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Camera")
 	TObjectPtr<UCameraComponent> FollowCamera;
 
-	// ================================================================
-	// CAMERA - common
-	// ================================================================
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Camera")
+	TObjectPtr<UCameraComponent> FirstPersonCamera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Camera")
+	TObjectPtr<USkeletalMeshComponent> FirstPersonMesh;
+
+	// ============================================================
+	// CAMERA - General
+	// ============================================================
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera")
 	EWoE_CameraMode CurrentCameraMode;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera",
+		meta = (ClampMin = "1.0", ClampMax = "30.0"))
 	float CameraInterpSpeed;
 
-	// ================================================================
+	// ============================================================
 	// CAMERA - Exploration
-	// ================================================================
+	// ============================================================
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|Exploration")
 	float CurrentArmLength;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|Exploration")
 	float MinArmLength;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|Exploration")
 	float MaxArmLength;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera",
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|Exploration",
 		meta = (ClampMin = "-89", ClampMax = "0"))
 	float ExplorationPitch;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Camera")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Camera|Exploration")
 	float DesiredYaw;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Camera")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Camera|Exploration")
 	float DesiredPitch;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera",
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|Exploration",
 		meta = (ClampMin = "0.1", ClampMax = "5.0"))
 	float ExplorationYawSensitivity;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|Exploration")
 	float ZoomSpeed;
 
-	// ================================================================
-	// CAMERA - First Person
-	// ================================================================
-
-	// Camera height above capsule root (eye level). Capsule half-height ~88, eyes ~70.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|FirstPerson",
+	// Spring arm pivot height above capsule center.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|Exploration",
 		meta = (ClampMin = "0.0", ClampMax = "200.0"))
-	float FirstPersonCameraHeight;
+	float ExplorationBoomHeight;
 
-	// Hide own mesh in FP mode. true = no body clipping from inside; other players still see your model.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|FirstPerson")
-	bool bHideMeshInFirstPerson;
+	// ============================================================
+	// CAMERA - First Person
+	// ============================================================
 
-	// Mouse sensitivity in FP. Exploration has its own; FP has separate sensitivity for head look.
+	// FP camera Z offset above capsule center. 60 ≈ eye level for default capsule.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|FirstPerson",
+		meta = (ClampMin = "-50.0", ClampMax = "200.0"))
+	float FirstPersonEyeHeight;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|FirstPerson",
 		meta = (ClampMin = "0.1", ClampMax = "5.0"))
 	float FirstPersonLookSensitivity;
 
-	// ================================================================
-	// INPUT - references to Input Action assets
-	// ================================================================
+	// Separate FOV for FP mesh rendering (arms). Lower = arms appear larger.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|FirstPerson",
+		meta = (ClampMin = "40", ClampMax = "120"))
+	float FirstPersonFOV;
+
+	// Scale for FP mesh rendering. <1 pulls arms back to prevent wall clipping.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Camera|FirstPerson",
+		meta = (ClampMin = "0.1", ClampMax = "1.5"))
+	float FirstPersonScale;
+
+	// ============================================================
+	// MOVEMENT
+	// ============================================================
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Movement",
+		meta = (ClampMin = "100", ClampMax = "2000"))
+	float RunSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WoE|Movement",
+		meta = (ClampMin = "50", ClampMax = "500"))
+	float WalkSpeed;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WoE|Movement")
+	bool bIsWalking;
+
+	// ============================================================
+	// INPUT
+	// ============================================================
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WoE|Input")
 	TObjectPtr<UInputMappingContext> DefaultMappingContext;
@@ -132,19 +156,31 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WoE|Input")
 	TObjectPtr<UInputAction> ToggleCameraModeAction;
 
-	// ================================================================
-	// INPUT - handler functions
-	// ================================================================
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WoE|Input")
+	TObjectPtr<UInputAction> JumpAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WoE|Input")
+	TObjectPtr<UInputAction> WalkAction;
+
+	// ============================================================
+	// INPUT HANDLERS
+	// ============================================================
 
 	void OnMove(const FInputActionValue& Value);
 	void OnLook(const FInputActionValue& Value);
 	void OnZoom(const FInputActionValue& Value);
 	void OnToggleCameraMode(const FInputActionValue& Value);
+	void OnJumpStarted(const FInputActionValue& Value);
+	void OnJumpCompleted(const FInputActionValue& Value);
+	void OnWalkStarted(const FInputActionValue& Value);
+	void OnWalkCompleted(const FInputActionValue& Value);
 
-	// ================================================================
+	// ============================================================
 	// CAMERA - internal
-	// ================================================================
+	// ============================================================
 
 	void UpdateCamera(float DeltaTime);
 	void ApplyCameraMode(EWoE_CameraMode NewMode);
+
+	bool bCameraInitialized;
 };
